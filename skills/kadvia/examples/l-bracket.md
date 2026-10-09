@@ -18,8 +18,8 @@ holes on two different planes, derived parameters and a parametric edit.
 - Do the fillets before the holes, as the gotchas recommend.
 
 ## Calls
-1. `skio:skio_status`, then `skio:new_part {"name": "L-bracket"}` → model `m1`.
-2. `skio:modeling_reference {}` (once per session).
+1. `kadvia:kadvia_status`, then `kadvia:new_part {"name": "L-bracket"}` → model `m1`.
+2. `kadvia:modeling_reference {}` (once per session).
 3. Parameters:
 
 ```json
@@ -85,10 +85,10 @@ upright holes are drilled from its inner face (YZ at X = t) toward −X:
 
 Check: the volume drops by 4·π·2.75²·5 ≈ 475 mm³ to **≈ 24 059 mm³**.
 
-7. `skio:render_views {"views": ["iso", "front", "top", "left"]}`. Check that `front` shows the
+7. `kadvia:render_views {"views": ["iso", "front", "top", "left"]}`. Check that `front` shows the
 L-profile with both radii, `top` shows 2 holes in the base leg, and `left` shows 2 holes in
 the upright.
-8. `skio:mass_properties {"model_id": "m1", "density_g_cm3": 2.70}` gives a volume of about
+8. `kadvia:mass_properties {"model_id": "m1", "density_g_cm3": 2.70}` gives a volume of about
 24 059 mm³ and a mass of about **65 g**.
 
 ## Report (excerpt)
@@ -103,6 +103,6 @@ the upright.
 ```json
 {"model_id": "m1", "values": {"width": 80, "hole_d": 6.6}}
 ```
-(`skio:set_parameters`) Check that `changes` shows the size going from 50 × 60 × 40 to
+(`kadvia:set_parameters`) Check that `changes` shows the size going from 50 × 60 × 40 to
 **50 × 80 × 40**. `hole_spacing` is now 50, so render `top` and confirm the holes are still 15 mm
 from the edges.

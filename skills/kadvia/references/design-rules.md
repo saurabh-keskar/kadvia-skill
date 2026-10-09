@@ -48,7 +48,7 @@ always win.
 | Clearance between mating parts (per side) | 0.2 (snug) – 0.4 (sliding) | 0.1–0.2 | 0.3–0.5 |
 | Overhangs | ≤ 45° from vertical without support; bridges ≤ ~10 mm | supports needed | self-supporting |
 
-- **Orientation:** put the largest flat face on the bed (Z = 0 in Skio). Vertical holes come out rounder than horizontal ones.
+- **Orientation:** put the largest flat face on the bed (Z = 0 in Kadvia). Vertical holes come out rounder than horizontal ones.
 - **Bottom edges:** chamfer them 0.4–0.6 mm against elephant's foot, rather than filleting.
 - **Screws into plastic:**
   - Self-tapping M3: pilot hole 2.5 mm in a boss of OD 6–8 mm.
@@ -67,7 +67,7 @@ always win.
 - **Tolerances:** ±0.1 mm by default. Ask before specifying anything tighter.
 
 ## 5. Sheet metal
-Skio v1 has no bend or flange features. Model sheet-metal parts as a solid with **uniform
+Kadvia v1 has no bend or flange features. Model sheet-metal parts as a solid with **uniform
 thickness `t`**, for example an extruded path profile, and follow these rules so a fabricator
 can unfold the part.
 - **Inside bend radius:** at least 1×t for mild steel and 5052 aluminium, at least 1.5–2×t for 6061-T6 and stainless. Outside radius = inside radius + t.
@@ -79,7 +79,7 @@ can unfold the part.
 ## 6. Injection molding (awareness)
 - Keep walls uniform at 1.5–3 mm (ABS 1.2–3.5 mm). Make ribs 50–60% of the wall thickness.
 - Inside radius should be at least 0.5×t, and outside radius = inside radius + t.
-- Molded parts need draft, typically 1–2°, which Skio v1 cannot model. Mention it to the user for molded parts.
+- Molded parts need draft, typically 1–2°, which Kadvia v1 cannot model. Mention it to the user for molded parts.
 
 ## 7. Fillets and chamfers
 
@@ -97,7 +97,7 @@ can unfold the part.
 - Prefer profile corner radii (`cornerRadius`) for vertical corners. They are more robust than filleting afterwards.
 
 ## 8. Densities
-For `skio:mass_properties` `density_g_cm3`:
+For `kadvia:mass_properties` `density_g_cm3`:
 
 | Material | g/cm³ |
 |---|---|

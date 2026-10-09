@@ -1,7 +1,7 @@
 # Image-to-CAD
 
 Rebuilding a part from a photo, sketch, screenshot or drawing. Claude reads the image
-directly; Skio needs no special tool. The skill is in **extracting dimensions honestly** and
+directly; Kadvia needs no special tool. The skill is in **extracting dimensions honestly** and
 making every guess easy to correct.
 
 ## Contents
@@ -16,7 +16,7 @@ making every guess easy to correct.
 ## 1. Workflow
 - [ ] Classify the image: an orthographic drawing (with or without dimensions), a hand sketch, a photo (straight-on or perspective), or a render or screenshot of another CAD model.
 - [ ] List the features (base shape, holes, slots, bosses, ribs, pockets, fillets, chamfers), the symmetry and the counts.
-- [ ] Choose the construction (sketch → extrude, revolve, primitives) and the orientation in Skio.
+- [ ] Choose the construction (sketch → extrude, revolve, primitives) and the orientation in Kadvia.
 - [ ] Find the scale; estimate every key dimension with its basis.
 - [ ] **Ask the user to confirm** the key dimensions (table below). Don't model guesses silently.
 - [ ] Model with every dimension as a parameter, in small batches.
@@ -82,13 +82,13 @@ Before the first modeling batch, show a compact table and ask one question:
 ## 6. Modeling and verifying
 - **Orientation:**
   - Put the part's largest flat face or natural base on XY at Z = 0.
-  - What the photo shows "from the front" should face −Y, so it matches Skio's `front` view.
-  - A drawing's front view maps to Skio `front`, its top view to `top`, and its right-side view to `right`.
-- Parameterise everything you estimated. Then a correction is a single `skio:set_parameters` call.
+  - What the photo shows "from the front" should face −Y, so it matches Kadvia's `front` view.
+  - A drawing's front view maps to Kadvia `front`, its top view to `top`, and its right-side view to `right`.
+- Parameterise everything you estimated. Then a correction is a single `kadvia:set_parameters` call.
 - **Verify:**
-  - `skio:render_views` with the view that matches the image (`front` for a straight-on photo or drawing view, `iso` for a three-quarter photo). Compare the silhouette, feature positions and counts.
+  - `kadvia:render_views` with the view that matches the image (`front` for a straight-on photo or drawing view, `iso` for a three-quarter photo). Compare the silhouette, feature positions and counts.
   - Check that ratios match: if the hole looks like ¼ of the width in the image, check `hole_d / width` in the model.
-  - `skio:mass_properties` if the user knows the real weight. Matching mass is a strong check on thickness.
+  - `kadvia:mass_properties` if the user knows the real weight. Matching mass is a strong check on thickness.
 - In the report, list assumptions, unverified items and the parameters to adjust.
 
 ## 7. Common traps

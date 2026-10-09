@@ -1,7 +1,7 @@
-# Modeling operations reference (Skio part model v1)
+# Modeling operations reference (Kadvia part model v1)
 
-Everything `skio:apply_operations` accepts. The same content is available live from
-`skio:modeling_reference`. Snippets use illustrative parameter names (`width`, `thickness`,
+Everything `kadvia:apply_operations` accepts. The same content is available live from
+`kadvia:modeling_reference`. Snippets use illustrative parameter names (`width`, `thickness`,
 ...); define your own with `set_parameter` first.
 
 ## Contents
@@ -16,8 +16,8 @@ Everything `skio:apply_operations` accepts. The same content is available live f
 9. [Gotchas](#9-gotchas)
 
 ## 1. Document model
-A part is `{schema: "skio.part/1", name, units: "mm", parameters: [...], features: [...]}`.
-Skio replays the features in order (regeneration) every time something changes.
+A part is `{schema: "kadvia.part/1", name, units: "mm", parameters: [...], features: [...]}`.
+Kadvia replays the features in order (regeneration) every time something changes.
 
 - **Parameter:** `{name, value, unit?, min?, max?, description?}`.
   - `name` matches `[A-Za-z_][A-Za-z0-9_]*` and must be unique.
@@ -34,7 +34,7 @@ Skio replays the features in order (regeneration) every time something changes.
   - `changes` compared with the previous state
 
 ## 2. Operations
-`skio:apply_operations {"model_id": "...", "operations": [...], "dry_run"?: bool}`
+`kadvia:apply_operations {"model_id": "...", "operations": [...], "dry_run"?: bool}`
 
 | `op` | Fields | Notes |
 |---|---|---|
@@ -51,7 +51,7 @@ Skio replays the features in order (regeneration) every time something changes.
 - Any invalid op or failing feature means **nothing changes**. The error names `operations[i]` and the feature id.
 - Ops run in order, so define parameters before the features that use them, and a sketch before its extrude.
 - `dry_run: true` validates and regenerates without committing.
-- `skio:set_parameters {"model_id": "...", "values": {"width": 120}}` is shorthand for `set_parameter` ops.
+- `kadvia:set_parameters {"model_id": "...", "values": {"width": 120}}` is shorthand for `set_parameter` ops.
 
 ```json
 [
@@ -239,7 +239,7 @@ select a union of the listed edges. Zero matches is an error.
 - Features with `operation` (extrude, revolve, primitives) create (`"new"`) or modify (`"add"`, `"cut"`, `"intersect"`) a body. The default `target` is the last body.
 - The first solid defaults to `"new"`; later ones default to `"add"`. Write `"operation": "cut"` explicitly for removals.
 - `"add"`/`"cut"`/`"intersect"` before any body exists is an error.
-- Body ids are `b0`, `b1`, ... Read them from the result or `skio:get_part`.
+- Body ids are `b0`, `b1`, ... Read them from the result or `kadvia:get_part`.
 - Prefer one body. Use extra `"new"` bodies only for multi-body designs the user asked for.
 
 ## 9. Gotchas

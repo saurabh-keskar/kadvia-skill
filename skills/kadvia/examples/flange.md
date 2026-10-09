@@ -17,7 +17,7 @@ and 6 × M10 bolt holes on a 100 mm PCD. Break the edges."
   - **Edge distance:** (140 − 100)/2 = 20, which is at least 1.5 × 11 = 16.5. ✓
 
 ## Calls
-1. `skio:new_part {"name": "Hub flange"}` → `m1`.
+1. `kadvia:new_part {"name": "Hub flange"}` → `m1`.
 2. Parameters:
 
 ```json
@@ -83,8 +83,8 @@ Check: each hole removes π·5.5²·14 ≈ 1 330 mm³, so 6 holes bring the volu
 Check: each selector matches 2 edges (top and bottom). The volume drops by about 600 mm³ to
 **≈ 217 144 mm³**.
 
-6. `skio:render_views {"views": ["iso", "top", "front"]}` and
-   `skio:mass_properties {"model_id": "m1", "density_g_cm3": 7.85}` → about **1.70 kg**.
+6. `kadvia:render_views {"views": ["iso", "top", "front"]}` and
+   `kadvia:mass_properties {"model_id": "m1", "density_g_cm3": 7.85}` → about **1.70 kg**.
 
 ## Report (excerpt)
 > Flange m1: Ø140 × 14 mm with a Ø70 × 20 mm hub (34 mm overall), a Ø50 bore and 6 × Ø11
@@ -98,4 +98,4 @@ Check: each selector matches 2 edges (top and bottom). The volume drops by about
 ```json
 {"model_id": "m1", "values": {"bolt_count": 8}}
 ```
-(`skio:set_parameters`) The volume should drop by 2 × 1 330 ≈ 2 661 mm³. Render `top` and count 8.
+(`kadvia:set_parameters`) The volume should drop by 2 × 1 330 ≈ 2 661 mm³. Render `top` and count 8.

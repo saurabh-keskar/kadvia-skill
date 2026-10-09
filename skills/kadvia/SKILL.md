@@ -1,25 +1,25 @@
 ---
-name: skio-cad
-description: Designs, edits and inspects mechanical CAD parts in the Skio CAD desktop app through the Skio MCP server. Builds parametric parts from text descriptions or from photos and drawings (sketches, extrudes, revolves, holes, fillets, chamfers, patterns, mirrors driven by named parameters), changes existing designs through their parameters, verifies results with exact mass properties and multi-view renders, and saves .skio or exports STEP/STL. Also opens STEP files and reports dimensions, volumes and what the user selected. Use when the user asks to model, design, create, recreate, modify, resize, measure, check or export a CAD part, shares an image of a part to rebuild, or mentions Skio or Skio CAD.
-compatibility: Requires the Skio CAD desktop app (macOS or Windows) running, with its MCP server ("skio") connected to Claude Desktop or Claude Code.
+name: kadvia
+description: Designs, edits and inspects mechanical CAD parts in the Kadvia desktop app through the Kadvia MCP server. Builds parametric parts from text descriptions or from photos and drawings (sketches, extrudes, revolves, holes, fillets, chamfers, patterns, mirrors driven by named parameters), changes existing designs through their parameters, verifies results with exact mass properties and multi-view renders, and saves .kadvia or exports STEP/STL. Also opens STEP files and reports dimensions, volumes and what the user selected. Use when the user asks to model, design, create, recreate, modify, resize, measure, check or export a CAD part, shares an image of a part to rebuild, or mentions Kadvia or Kadvia.
+compatibility: Requires the Kadvia desktop app (macOS or Windows) running, with its MCP server ("kadvia") connected to Claude Desktop or Claude Code.
 metadata:
   version: "0.2.0"
 ---
 
-# Skio CAD
+# Kadvia
 
-Skio CAD is a desktop CAD application. Claude controls the **running app** through the
-`skio` MCP server, and everything Claude does appears live in the user's Skio CAD window.
+Kadvia is a desktop CAD application. Claude controls the **running app** through the
+`kadvia` MCP server, and everything Claude does appears live in the user's Kadvia window.
 
 What it can do:
 - **Model parametric parts:** text-to-CAD, image-to-CAD, and edits through parameters.
-- **Inspect models:** open STEP or `.skio` files, measure them, take screenshots and read the user's selection.
-- **Save and export:** save `.skio`, export STEP or STL.
+- **Inspect models:** open STEP or `.kadvia` files, measure them, take screenshots and read the user's selection.
+- **Save and export:** save `.kadvia`, export STEP or STL.
 
 ## Conventions
 - Units: **mm** and **degrees**. Areas are mm² and volumes mm³. Convert only when the user asks.
 - **Z is up.** `front` looks along +Y (camera on −Y), `top` looks down −Z and `right` looks along −X.
-- Ids: model ids come from `skio:new_part`, `skio:open_step_file` and `skio:list_models`. Feature, parameter and body ids come from `skio:get_part`. **Never guess ids.**
+- Ids: model ids come from `kadvia:new_part`, `kadvia:open_step_file` and `kadvia:list_models`. Feature, parameter and body ids come from `kadvia:get_part`. **Never guess ids.**
 - Paths for files must be absolute (`~/` is allowed).
 - Sketch planes: `XY` is the floor (normal +Z), `XZ` is the front wall (normal **−Y**, so offset `o` puts the plane at Y = −o) and `YZ` is the side wall (normal +X).
 
@@ -28,36 +28,36 @@ Details: [references/views-and-conventions.md](references/views-and-conventions.
 ## Tools
 | Tool | Use it to |
 |---|---|
-| `skio:skio_status` | Check the app is running; list open models (`kind`: `imported` or `part`) |
-| `skio:new_part` | Start a new, empty parametric part (opens in the user's window) |
-| `skio:get_part` | Read a part: parameters, features with ids, feature status, bodies, revision |
-| `skio:modeling_reference` | Exact fields for every op, feature, profile and selector, with examples |
-| `skio:apply_operations` | **The modeling tool**: a batch of operations as one transaction (one undo step) |
-| `skio:set_parameters` | Change named dimensions: `{"width": 90}` |
-| `skio:undo` / `skio:redo` | Step back or forward through committed changes |
-| `skio:mass_properties` | Exact volume, area, centre of mass and bbox (plus mass for a given density) |
-| `skio:render_views` | See the model: 1–8 standard views as images |
-| `skio:save_part` / `skio:export_model` | Write `.skio` / STEP or STL (only when the user asks or agrees) |
-| `skio:open_step_file` | Open `.step`/`.stp` (imported, read-only) or `.skio` (editable part) |
-| `skio:list_models` / `skio:get_model_info` | Bodies, faces, edges, bbox, volume, warnings of any model |
-| `skio:set_view` / `skio:fit_view` / `skio:set_display_mode` | Present things in the user's viewport |
-| `skio:get_selection` | What the user clicked (faces, edges, bodies) |
-| `skio:close_model` | Remove a model from the window (confirm first; save parts before closing) |
+| `kadvia:kadvia_status` | Check the app is running; list open models (`kind`: `imported` or `part`) |
+| `kadvia:new_part` | Start a new, empty parametric part (opens in the user's window) |
+| `kadvia:get_part` | Read a part: parameters, features with ids, feature status, bodies, revision |
+| `kadvia:modeling_reference` | Exact fields for every op, feature, profile and selector, with examples |
+| `kadvia:apply_operations` | **The modeling tool**: a batch of operations as one transaction (one undo step) |
+| `kadvia:set_parameters` | Change named dimensions: `{"width": 90}` |
+| `kadvia:undo` / `kadvia:redo` | Step back or forward through committed changes |
+| `kadvia:mass_properties` | Exact volume, area, centre of mass and bbox (plus mass for a given density) |
+| `kadvia:render_views` | See the model: 1–8 standard views as images |
+| `kadvia:save_part` / `kadvia:export_model` | Write `.kadvia` / STEP or STL (only when the user asks or agrees) |
+| `kadvia:open_step_file` | Open `.step`/`.stp` (imported, read-only) or `.kadvia` (editable part) |
+| `kadvia:list_models` / `kadvia:get_model_info` | Bodies, faces, edges, bbox, volume, warnings of any model |
+| `kadvia:set_view` / `kadvia:fit_view` / `kadvia:set_display_mode` | Present things in the user's viewport |
+| `kadvia:get_selection` | What the user clicked (faces, edges, bodies) |
+| `kadvia:close_model` | Remove a model from the window (confirm first; save parts before closing) |
 
 ## Modeling checklist (copy it and tick it off)
-- [ ] `skio:skio_status`: is the app running and the window ready?
+- [ ] `kadvia:kadvia_status`: is the app running and the window ready?
 - [ ] Understand the request: function, envelope, key dimensions, holes and fasteners, material and process. **Ask** about anything that changes the design and has no sensible default.
 - [ ] Plan on paper: a feature list in build order, plus a parameter table (name, value, why).
-- [ ] `skio:new_part` (new design) or `skio:get_part` (existing part).
-- [ ] `skio:modeling_reference` once per session, before the first batch.
+- [ ] `kadvia:new_part` (new design) or `kadvia:get_part` (existing part).
+- [ ] `kadvia:modeling_reference` once per session, before the first batch.
 - [ ] Batch 1: **parameters** (`set_parameter` for every key dimension).
 - [ ] Batches 2…n: features in small logical steps: base solid → cuts and pockets → holes → patterns and mirrors → fillets and chamfers.
 - [ ] After **every** batch, read the result: all features `ok`, expected body count, bbox `size` matching the envelope, volume moving the right way.
-- [ ] `skio:render_views` (`["iso","top","front"]` or the views that show the change).
-- [ ] `skio:mass_properties`: compare with your hand estimate (and give mass if the material is known).
+- [ ] `kadvia:render_views` (`["iso","top","front"]` or the views that show the change).
+- [ ] `kadvia:mass_properties`: compare with your hand estimate (and give mass if the material is known).
 - [ ] Compare against the user's spec item by item; fix and iterate.
 - [ ] Report what was built, the parameters the user can change, the checks you ran and your assumptions.
-- [ ] Offer `skio:save_part` (`.skio`, keeps parameters) and `skio:export_model` (STEP for CAD/CNC, STL for printing).
+- [ ] Offer `kadvia:save_part` (`.kadvia`, keeps parameters) and `kadvia:export_model` (STEP for CAD/CNC, STL for printing).
 
 A minimal first modeling batch (a plate):
 
@@ -109,26 +109,26 @@ Worked examples: [examples/l-bracket.md](examples/l-bracket.md) (sketch + extrud
 2. **Find the scale.** Use a written dimension, a known object (ruler, coin, bolt head, standard connector) or a standard feature size. Without a scale you only have proportions.
 3. **Estimate dimensions** from the scale and proportions. Use measurements only from faces seen square-on; perspective shortens receding edges.
 4. **Ask the user to confirm the key dimensions before modeling.** Show a short table (parameter, estimate, basis) and say which values are guesses. Ask for any hidden features (back side, hole depth).
-5. Model with **every estimated dimension as a parameter**, so corrections are one `skio:set_parameters` call.
+5. Model with **every estimated dimension as a parameter**, so corrections are one `kadvia:set_parameters` call.
 6. Verify by rendering the same view as the image (`front` ≈ a straight-on photo, `iso` ≈ a three-quarter photo). Compare silhouette, proportions and feature counts.
 7. Report your assumptions and offer to adjust them.
 
 Details and a dimension-estimation checklist: [references/image-to-cad.md](references/image-to-cad.md).
 
 ## Editing an existing part
-1. `skio:get_part`: read the parameter names, feature ids and current status. For a STEP file (kind `imported`) there are no parameters. Say so and offer to rebuild it as a part.
-2. When the user says "this face", "that hole" or "here", call `skio:get_selection` to find out what they mean.
-3. **Size changes go through parameters:** `skio:set_parameters {"values": {"width": 90}}`. Check the `changes` list: did the bbox grow by exactly what was asked?
-4. Structural changes go through `skio:apply_operations`:
+1. `kadvia:get_part`: read the parameter names, feature ids and current status. For a STEP file (kind `imported`) there are no parameters. Say so and offer to rebuild it as a part.
+2. When the user says "this face", "that hole" or "here", call `kadvia:get_selection` to find out what they mean.
+3. **Size changes go through parameters:** `kadvia:set_parameters {"values": {"width": 90}}`. Check the `changes` list: did the bbox grow by exactly what was asked?
+4. Structural changes go through `kadvia:apply_operations`:
    - Add features with `add_feature` (use `after` to insert them before the fillets).
    - Change fields with `update_feature` (a shallow merge: a patched `plane`, `profiles`, `points` or `edges` replaces the whole value).
    - Use `suppress_feature` to try a design without a feature.
    - Use `delete_feature` only when the feature is truly unwanted.
 5. If a new dimension appears, add a parameter for it in the same batch.
-6. For risky changes, use `dry_run: true` first. Use `skio:undo` to back out a committed step the user doesn't like.
+6. For risky changes, use `dry_run: true` first. Use `kadvia:undo` to back out a committed step the user doesn't like.
 
 ## Verification: what to check
-| After | Check numerically | Check visually (`skio:render_views`) |
+| After | Check numerically | Check visually (`kadvia:render_views`) |
 |---|---|---|
 | Base extrude/revolve/box | bbox `size` = intended envelope; volume ≈ area × height | `iso` shape, orientation (Z up) |
 | Cut / pocket | volume decreased by about the pocket volume; bbox unchanged | `top`/`iso`: position, depth, it cut the right side |
@@ -136,25 +136,25 @@ Details and a dimension-estimation checklist: [references/image-to-cad.md](refer
 | Pattern / mirror | volume changed by count × the single feature | `top`: count and spacing; nothing missing |
 | Fillet / chamfer | volume changed slightly; edge/face count rose; feature `ok` | `iso`: the right edges rounded |
 | Parameter change | `changes`: bbox/volume moved by the expected amount | the view that shows that dimension |
-| Before export | `skio:mass_properties`: one closed body (unless intended), volume > 0, mass if the material is known | all four default views |
+| Before export | `kadvia:mass_properties`: one closed body (unless intended), volume > 0, mass if the material is known | all four default views |
 
 Always compute a rough hand estimate first. A result 2× off means a wrong plane, a wrong direction or a missed cut.
 
 ## When something fails
-- A failed `skio:apply_operations` changes **nothing**. The error gives the `code`, a message, `operations[i]` and the feature id, plus a hint.
+- A failed `kadvia:apply_operations` changes **nothing**. The error gives the `code`, a message, `operations[i]` and the feature id, plus a hint.
   - Fix that operation and resend the corrected batch. Don't resend only the tail, because the earlier operations were rolled back too.
   - `geometry`: the fillet is too large, the selector matched nothing, a cut misses the body, or a profile is open or self-intersecting. Reduce sizes, change the selector, or split the batch to isolate the cause.
-  - `bad_request`: wrong field, unknown id, bad expression or undefined parameter. Call `skio:get_part` and `skio:modeling_reference`.
-- After a timeout or lost connection, call `skio:get_part` and check the `revision` before retrying.
-- *Skio CAD is not running* → ask the user to open the app.
+  - `bad_request`: wrong field, unknown id, bad expression or undefined parameter. Call `kadvia:get_part` and `kadvia:modeling_reference`.
+- After a timeout or lost connection, call `kadvia:get_part` and check the `revision` before retrying.
+- *Kadvia is not running* → ask the user to open the app.
 
 More: [references/troubleshooting.md](references/troubleshooting.md).
 
 ## Inspecting existing models (STEP)
-- Overall size comes from the bbox `size` in `skio:get_model_info` (X × Y × Z mm).
+- Overall size comes from the bbox `size` in `kadvia:get_model_info` (X × Y × Z mm).
 - Volume is reported per body and in `totals`. It is missing when a body is not a closed solid; say so.
-- Mass = volume × density (steel 7.85 g/cm³, aluminium 6061 2.70) via `skio:mass_properties` with `density_g_cm3`, or by hand with the formula shown.
+- Mass = volume × density (steel 7.85 g/cm³, aluminium 6061 2.70) via `kadvia:mass_properties` with `density_g_cm3`, or by hand with the formula shown.
 - Selection areas and lengths come from the display mesh, so say "about" for curved faces.
-- Look before you answer: call `skio:render_views` whenever the answer depends on the shape.
+- Look before you answer: call `kadvia:render_views` whenever the answer depends on the shape.
 
 Example: [examples/inspect-a-step-file.md](examples/inspect-a-step-file.md).

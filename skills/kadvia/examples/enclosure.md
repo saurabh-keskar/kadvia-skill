@@ -8,7 +8,7 @@ holes, a cut-out on the XZ (front) plane, and print-oriented design rules.
 four corner bosses for M3 self-tapping lid screws, and a USB-C opening in the front."
 
 ## Plan
-- Put the base on Z = 0 and centre the box on X/Y. Front = the −Y face, matching Skio's front view.
+- Put the base on Z = 0 and centre the box on X/Y. Front = the −Y face, matching Kadvia's front view.
 - **Shell:** an outer rounded rectangle extruded to the full height, minus an inner rounded
   rectangle cut down from the top, leaving the floor. Inner corner radius = `corner_r − wall`
   keeps the wall uniform.
@@ -21,7 +21,7 @@ four corner bosses for M3 self-tapping lid screws, and a USB-C opening in the fr
   elephant's foot.
 
 ## Calls
-1. `skio:new_part {"name": "Electronics box"}` → `m1`.
+1. `kadvia:new_part {"name": "Electronics box"}` → `m1`.
 2. Parameters (including derived ones):
 
 ```json
@@ -118,11 +118,11 @@ does not change, the cut went toward −Y (into air): check the direction.
 
 Check: the feature is `ok` and the volume drops by about 32 mm³ to **≈ 24 967 mm³**.
 
-7. `skio:render_views {"views": ["iso", "front", "top", "right"]}` and
-   `skio:mass_properties {"model_id": "m1", "density_g_cm3": 1.27}` → about 31.7 g as solid
+7. `kadvia:render_views {"views": ["iso", "front", "top", "right"]}` and
+   `kadvia:mass_properties {"model_id": "m1", "density_g_cm3": 1.27}` → about 31.7 g as solid
    PETG. A printed part is lighter, depending on infill.
-8. When the user agrees: `skio:save_part {"model_id": "m1", "path": "~/Documents/electronics-box.skio"}`
-   and `skio:export_model {"model_id": "m1", "path": "~/Documents/electronics-box.stl"}`.
+8. When the user agrees: `kadvia:save_part {"model_id": "m1", "path": "~/Documents/electronics-box.kadvia"}`
+   and `kadvia:export_model {"model_id": "m1", "path": "~/Documents/electronics-box.stl"}`.
 
 ## Report (excerpt)
 > Enclosure m1: 80 × 50 × 30 mm outside, 2 mm walls and floor, R4 outside corners, 4 corner
