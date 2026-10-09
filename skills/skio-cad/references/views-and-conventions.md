@@ -18,6 +18,21 @@
 SolidWorks users often think Y-up ("Front plane = XY"). In Skio, the floor plane is XY and
 height is Z. Translate when users describe directions in SolidWorks terms.
 
+## Sketch planes (modeling)
+| Skio plane | Faces the view | u, v | Normal | Offset `o` puts it at |
+|---|---|---|---|---|
+| `XY` | `top` | +X, +Y | +Z | Z = o |
+| `XZ` | `front` | +X, +Z | −Y | Y = −o |
+| `YZ` | `right` | +Y, +Z | +X | X = o |
+
+SolidWorks "Top plane" ≈ Skio `XY`, "Front plane" ≈ Skio `XZ`, "Right plane" ≈ Skio `YZ`
+(with Z up instead of Y up).
+
+## Ids
+- Models: `skio:new_part`, `skio:open_step_file`, `skio:list_models` (never guess).
+- Features and parameters: the ids/names you chose, listed by `skio:get_part`.
+- Bodies: `b0`, `b1`, ... in modeling results and `skio:get_part`.
+
 ## Display modes (`skio:set_display_mode`)
 | Mode | Good for |
 |---|---|
