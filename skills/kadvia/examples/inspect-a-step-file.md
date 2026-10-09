@@ -2,7 +2,7 @@
 
 **User:** "Open ~/Downloads/bracket.step in Kadvia. How big is it and roughly how much would it weigh in aluminium?"
 
-**Claude:**
+**AI assistant:**
 1. `kadvia:kadvia_status` → app running, window ready, nothing open.
 2. `kadvia:open_step_file { "path": "~/Downloads/bracket.step" }` → model `m1`, 1 body, 117 faces,
    bbox size 152.4 × 101.6 × 25.4 mm, volume 118,403 mm³, no warnings.

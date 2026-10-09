@@ -1,7 +1,9 @@
-# Kadvia — Claude Skill
+# Kadvia — AI instructions & skill
 
-Design and inspect CAD parts by chatting with Claude. This skill teaches Claude how to drive
-the **Kadvia** desktop app:
+Design and inspect CAD parts by chatting with **any AI assistant** that supports MCP — Claude,
+ChatGPT/Codex, Gemini, Cursor, VS Code Copilot, Windsurf, LM Studio with local models, and more.
+Kadvia is a desktop CAD app with a built-in MCP server; this repository teaches your AI how to
+use it well:
 - build **parametric parts** from a description or a photo or drawing, with named dimensions
   you can change later;
 - edit existing parts through their parameters;
@@ -12,23 +14,34 @@ the **Kadvia** desktop app:
 > Status: preview (v0.2). Parametric modeling (sketch, extrude, revolve, holes, fillets,
 > chamfers, patterns, mirror), viewing and inspection.
 
+The Kadvia MCP server already sends core instructions to every client, so this repository is
+optional — it makes results better (design rules, workflows, worked examples).
+
 ## What's here
 
-| Path | Contents |
+| Path | For |
 |---|---|
-| `skills/kadvia/SKILL.md` | The skill Claude reads |
+| `instructions/AGENTS.md` | **Any AI client**: use as Cursor rules, Codex `AGENTS.md`, Gemini `GEMINI.md`, VS Code Copilot instructions, or a system prompt |
+| `skills/kadvia/` | The same guidance in the open **Agent Skills** format (`SKILL.md` + references + examples), e.g. for Claude |
 | `skills/kadvia/references/` | Modeling operations, image-to-CAD, design rules (DFM), views & conventions, troubleshooting |
 | `skills/kadvia/examples/` | Worked examples: L-bracket, flange, enclosure, inspecting a STEP file |
-| `install/README.md` | Install Kadvia and connect it to Claude |
-| `docs/images/` | Screenshots |
+| `install/README.md` | Install Kadvia and connect your AI client |
 
 ## Quick start
 1. Install and open Kadvia (macOS or Windows) — see [install/README.md](install/README.md).
-2. Connect Claude Desktop or Claude Code to Kadvia (one entry, shown in the app under **AI → Claude**).
-3. Add this skill:
-   - **Claude Code:** copy `skills/kadvia` to `~/.claude/skills/kadvia`.
-   - **Claude Desktop / claude.ai:** zip the `skills/kadvia` folder and upload it in Settings → Capabilities → Skills.
-4. Ask Claude: *"In Kadvia, make a 100 × 60 × 6 mm aluminium plate with four M5 holes 10 mm from the corners."*
+2. In Kadvia choose **AI → Connect AI assistant** and click Connect next to your client
+   (or add the `kadvia` MCP server to your client's config by hand).
+3. Optional — add the instructions:
+   - **Cursor:** copy `instructions/AGENTS.md` to `.cursor/rules/kadvia.mdc` in your project.
+   - **OpenAI Codex CLI:** put it in your project's `AGENTS.md`.
+   - **Gemini CLI:** put it in `GEMINI.md`.
+   - **VS Code Copilot:** `.github/copilot-instructions.md`.
+   - **Claude:** copy `skills/kadvia` to `~/.claude/skills/kadvia` (Claude Code) or upload the zipped folder as a skill (Claude apps).
+   - **Other clients:** paste `instructions/AGENTS.md` into the system prompt.
+4. Ask your AI: *"In Kadvia, make a 100 × 60 × 6 mm aluminium plate with four M5 holes 10 mm from the corners."*
+
+Works best with models that accept images (they can look at Kadvia's renders); text-only models
+still get every number (bounding box, volume, mass).
 
 ## Example prompts
 

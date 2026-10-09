@@ -1,6 +1,6 @@
 # Image-to-CAD
 
-Rebuilding a part from a photo, sketch, screenshot or drawing. Claude reads the image
+Rebuilding a part from a photo, sketch, screenshot or drawing. The AI reads the image
 directly; Kadvia needs no special tool. The skill is in **extracting dimensions honestly** and
 making every guess easy to correct.
 
