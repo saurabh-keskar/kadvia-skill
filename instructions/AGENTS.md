@@ -13,16 +13,16 @@ Kadvia is a desktop CAD application. The AI controls the **running app** through
 What it can do:
 - **Model parametric parts:** text-to-CAD, image-to-CAD (tracing over calibrated reference images), and edits through parameters.
 - **Edit imported STEP files:** convert to a part, recognise holes and fillets, resize holes, delete, offset and move faces.
-- **Assemblies** (`.kasm`): place parts, mate them, check DOF, BOM and interference.
-- **2D drawings** (`.kdraw`): auto-dimensioned views, detail and section views, notes, title block, PDF/DXF/SVG.
+- **Assemblies** (`.kasm`): place parts and rigid sub-assemblies, mate them (including gear, rack and pinion, cam and limit mates), check DOF, BOM (top-level, indented, flat) and interference.
+- **2D drawings** (`.kdraw`) of parts, assemblies and STEP models: auto-dimensioned views, detail, section and exploded views, ordinate/baseline/chain dimensions, tolerances and ISO fits, GD&T and surface finish, BOM tables and balloons, multiple sheets, title block, PDF/DXF/SVG.
 - **Design check:** manufacturability for CNC, FDM/SLA printing, injection molding and sheet metal.
-- **Inspect models:** open files, measure exactly, take screenshots and read the user's selection.
+- **Inspect models:** open files, measure exactly, take screenshots and read the user's selection (faces, edges, vertices, bodies).
 - **Save and export:** `.kadvia`, `.kasm`, `.kdraw`; STEP or STL.
 
 ## Conventions
 - Units: **mm** and **degrees**. Areas are mm² and volumes mm³. Convert only when the user asks.
 - **Z is up.** `front` looks along +Y (camera on −Y), `top` looks down −Z and `right` looks along −X.
-- Ids: model ids come from `kadvia_status`, `list_models` and the tools that create or open models. Feature, parameter and body ids come from `get_part`; face and edge ids from `get_selection`, `recognize_features` or `get_drawing`. **Never guess ids.**
+- Ids: model ids come from `kadvia_status`, `list_models` and the tools that create or open models. Feature, parameter and body ids come from `get_part`; face, edge and vertex ids from `get_selection`, `recognize_features` or `get_drawing`. **Never guess ids.**
 - Model kinds: `part` (editable, `.kadvia`), `imported` (STEP, view/measure until converted), `assembly` (`.kasm`), `drawing` (`.kdraw`).
 - Paths for files must be absolute (`~/` is allowed).
 - Sketch planes: `XY` is the floor (normal +Z), `XZ` is the front wall (normal **−Y**, so offset `o` puts the plane at Y = −o) and `YZ` is the side wall (normal +X).
@@ -45,13 +45,13 @@ Details: [references/views-and-conventions.md](../skills/kadvia/references/views
 | `check_design` | Manufacturability check for a process, with locations and fixes |
 | `open_step_file` | Open `.step`/`.stp` (imported), `.kadvia` (part), `.kasm` (assembly) or `.kdraw` (drawing) |
 | `convert_to_part` / `recognize_features` | Make an imported STEP editable; list its holes, bosses, fillets and chamfers |
-| `new_assembly` / `get_assembly` / `apply_assembly_operations` | Build and edit assemblies (components, mates) |
-| `assembly_bom` / `check_interference` | Bill of materials; overlapping components |
-| `new_drawing` / `get_drawing` / `apply_drawing_operations` / `export_drawing` | 2D drawings: create, read edge ids, edit, write PDF/DXF/SVG |
+| `new_assembly` / `get_assembly` / `apply_assembly_operations` | Build and edit assemblies (components, sub-assemblies, mates) |
+| `assembly_bom` / `check_interference` | Bill of materials (`structure`: `top`, `indented`, `flat`); overlapping components |
+| `new_drawing` / `get_drawing` / `apply_drawing_operations` / `export_drawing` | 2D drawings of parts, assemblies or STEP models: create, read edge ids, edit (sheets, dimensions, tolerances, GD&T, BOM, balloons), write PDF/DXF/SVG |
 | `save_part` / `export_model` | Write `.kadvia`/`.kasm`/`.kdraw` / STEP or STL (only when the user asks or agrees) |
 | `list_models` / `get_model_info` | Bodies, faces, edges, bbox, volume, warnings of any model |
 | `set_view` / `fit_view` / `set_display_mode` | Present things in the user's viewport |
-| `get_selection` | What the user clicked (faces, edges, bodies) |
+| `get_selection` | What the user clicked (faces, edges, vertices with their `point`, bodies) |
 | `close_model` | Remove a model from the window (confirm first; save before closing) |
 
 ## Modeling checklist (copy it and tick it off)
@@ -164,21 +164,29 @@ refused and nothing changes. Workflow, selectors and honest limits: [references/
 
 ## Assemblies
 1. Build or open the parts first; read their geometry (mate references use each **part's own coordinates**).
-2. `new_assembly`, then `apply_assembly_operations` with `add_component` (`source`: `{"model": "<open part id>"}`, `{"path": ...}` or `{"step": ...}`; rough `transform.position`). The first component is grounded.
+2. `new_assembly`, then `apply_assembly_operations` with `add_component` (`source`: `{"model": "<open part id>"}`, `{"path": ...}` or `{"step": ...}`; rough `transform.position`). The first component is grounded. A saved `.kasm` as `path` is a **rigid sub-assembly** (mate references use its own coordinates).
 3. Add mates in small batches: `coincident`, `concentric`, `distance`, `angle`, `parallel`, `perpendicular`, `tangent`, `fixed`, `lock`; `flip: true` reverses a coincident/distance/angle/tangent sense.
-4. After each batch read `solve.status`, `solve.dof`, `underConstrained` and each mate's `status` (`ok` / `redundant` / `conflicting` / `error`). A bolt keeping 1 DOF (spin) is fine.
-5. `render_views`, `check_interference`, `assembly_bom`. Optional `set_exploded_view {scale}` (display only).
-6. `save_part` (`.kasm`, after saving the parts) and `export_model` (STEP: part solids placed; STL: everything).
+   - Limits: `distance`/`angle` with `min`/`max` instead of `value` (a stroke or opening range).
+   - Motion: `gear` (`ratio` = teeth A / teeth B), `rack_pinion` (`value` = π × pitch diameter, mm per turn), `cam` (follower on a cam face). Hold their axes with other mates first.
+   - Centring: `symmetric` (`c` = mirror plane), `width` (`a`, `b` slot faces; `c`, `d` tab faces).
+4. After each batch read `solve.status`, `solve.dof`, `underConstrained` and each mate's `status` (`ok` / `redundant` / `conflicting` / `error`). A bolt keeping 1 DOF (spin) is fine; so is a gear train keeping 1 DOF.
+5. `render_views`, `check_interference`, `assembly_bom` (`structure: "indented"` or `"flat"` with sub-assemblies). Optional `set_exploded_view {scale}` (display only).
+6. `save_part` (`.kasm`, after saving the parts) and `export_model` (STEP: part solids placed through every level; STL: everything).
 
-Worked example (bracket bolted to a plate) and limits: [references/assemblies.md](../skills/kadvia/references/assemblies.md).
+Worked examples (bracket bolted to a plate, gear pair), sub-assemblies and limits: [references/assemblies.md](../skills/kadvia/references/assemblies.md).
 
 ## 2D drawings
-1. `new_drawing {"source": "<part id>", "views": [...], "title_block": {...}}`: views, sheet and scale are laid out and auto-dimensioned (first-angle by default; `projection: "third-angle"` for ASME).
-2. `get_drawing`: check dimension values and `warnings`; read the **edge ids** (`"b0:e12"`, `.start`/`.end`/`.mid`/`.center`) per view.
-3. `apply_drawing_operations`: `add_dimension` (`horizontal`, `vertical`, `linear`, `diameter`, `radius`, `angle`; values are measured, never typed), `add_view` (`standard`, `detail`, `section`), `add_annotation` (`note`, `hole_callout`, …), `update_title_block`, `update_sheet`.
-4. `export_drawing` (`.pdf`, `.dxf`, `.svg`) and `save_part` (`.kdraw`, after saving the part), with the user's OK. The drawing follows later part changes.
+1. `new_drawing {"source": "<part, assembly or STEP model id>", "views": [...], "title_block": {...}}`: views, sheet and scale are laid out and auto-dimensioned (first-angle by default; `projection: "third-angle"` for ASME). Assemblies also get a BOM table and balloons (`bom_table`, `balloons`).
+2. `get_drawing`: check dimension values and `warnings`; read the **edge ids** (`"b0:e12"`, assemblies `"bolt/b0:e4"`; `.start`/`.end`/`.mid`/`.center`) per view, and the `bom` of an assembly.
+3. `apply_drawing_operations`:
+   - `add_dimension` (`horizontal`, `vertical`, `linear`, `diameter`, `radius`, `angle`, `ordinate`; values are measured, never typed) with an optional `tolerance` (`symmetric`, `deviation`, `limits`, `fit` such as `"H7"` or `"H7/g6"`, `basic`, `reference`); `add_dimension_set` (`ordinate`, `baseline`, `chain`).
+   - `add_view` (`standard`, `detail`, `section`; `explode` for assemblies; `sheet`).
+   - `add_annotation`: `note`, `hole_callout`, `datum`, `feature_control_frame` (flatness, perpendicularity, position, … with datums), `surface_finish`, `balloon`, `bom_table`; `auto_balloon`.
+   - `add_sheet` / `remove_sheet` / `move_sheet`, `update_title_block`, `update_sheet`.
+4. `export_drawing` (`.pdf`: every sheet as a page; `.dxf`/`.svg`: one file per sheet, or `sheet`) and `save_part` (`.kdraw`, after saving the source), with the user's OK. The drawing follows later changes of its source.
+5. Add tolerances and GD&T only where the user asks or the function needs them; ask for the fit or zone size instead of inventing tight values.
 
-Worked example (drawing of the L-bracket) and limits: [references/drawings.md](../skills/kadvia/references/drawings.md).
+Worked examples (L-bracket, toleranced flange with GD&T, assembly drawing with BOM and balloons) and limits: [references/drawings.md](../skills/kadvia/references/drawings.md).
 
 ## Design check
 - Run `check_design {"model_id": ..., "process": ...}` when a design is done or the user asks whether it can be made. Processes: `cnc`, `print_fdm`, `print_sla`, `injection`, `sheet_metal`, `general`. Ask which one if unclear; pass `build_direction` and `params` (for example `{"toolRadius": 1.5}`) when known.
@@ -216,7 +224,7 @@ More: [references/troubleshooting.md](../skills/kadvia/references/troubleshootin
 - Exact distances, radii and angles: `measure` (omit `a`/`b` to measure the user's selection). Imported models are measured on their mesh (`exact: false`).
 - Volume is reported per body and in `totals`. It is missing when a body is not a closed solid; say so.
 - Mass = volume × density (steel 7.85 g/cm³, aluminium 6061 2.70) via `mass_properties` with `density_g_cm3`, or by hand with the formula shown.
-- Selection areas and lengths from `get_selection` come from the display mesh, so say "about" for curved faces, or use `measure`.
+- Selection areas and lengths from `get_selection` come from the display mesh, so say "about" for curved faces, or use `measure`. A selected vertex (`kind: "vertex"`) comes with its `point`; measure it as `{"kind": "point", "point": [x, y, z]}`.
 - Look before you answer: call `render_views` whenever the answer depends on the shape.
 
 Example: [examples/inspect-a-step-file.md](../skills/kadvia/examples/inspect-a-step-file.md).

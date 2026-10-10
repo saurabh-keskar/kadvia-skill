@@ -111,4 +111,4 @@ from the edges.
 - **Design check:** `kadvia:check_design {"model_id": "m1", "process": "cnc"}` before sending it
   out (see [../references/design-check.md](../references/design-check.md)).
 - **Drawing:** a dimensioned A4 drawing of this bracket is worked through in
-  [../references/drawings.md](../references/drawings.md#9-worked-example-drawing-of-the-l-bracket).
+  [../references/drawings.md](../references/drawings.md#13-worked-example-drawing-of-the-l-bracket).

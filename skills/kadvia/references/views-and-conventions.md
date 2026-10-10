@@ -32,9 +32,10 @@ A "top plane" is Kadvia `XY`, a "front plane" is Kadvia `XZ` and a "right plane"
 - Models: `kadvia:new_part`, `kadvia:new_assembly`, `kadvia:new_drawing`, `kadvia:convert_to_part`, `kadvia:open_step_file`, `kadvia:list_models` (never guess).
 - Model kinds: `part` (`.kadvia`), `imported` (STEP), `assembly` (`.kasm`), `drawing` (`.kdraw`).
 - Features and parameters: the ids/names you chose, listed by `kadvia:get_part`.
-- Bodies: `b0`, `b1`, ... in modeling results and `kadvia:get_part`; in assemblies `<componentId>/<bodyId>`.
+- Bodies: `b0`, `b1`, ... in modeling results and `kadvia:get_part`; in assemblies `<componentId>/<bodyId>`; inside a sub-assembly the body is `<child>.<body>` (`s1/plate.b0`).
 - Face and edge ids (from `kadvia:get_selection`, `kadvia:recognize_features`, `kadvia:check_design`) belong to the current geometry and change after edits: use them right away (for example in `kadvia:measure`), and use selectors in saved features.
-- Drawing edge ids (`"b0:e12"`) come from `kadvia:get_drawing`.
+- Selected vertices (`kind: "vertex"`) come with their `point` [x, y, z]; their ids are only valid for the current revision. Measure them as `{"kind": "point", "point": [...]}` or use the point in a `near` selector.
+- Drawing edge ids (`"b0:e12"`; assembly drawings `"bolt/b0:e12"`) come from `kadvia:get_drawing`.
 
 ## Display modes (`kadvia:set_display_mode`)
 | Mode | Good for |

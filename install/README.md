@@ -50,7 +50,7 @@ worked examples):
 - other clients: use `instructions/AGENTS.md` as project rules or a system prompt (see the
   main [README](../README.md#quick-start) for where each client reads it).
 
-Update to the latest version (v0.3) whenever you update Kadvia; older copies don't describe
+Update to the latest version (v0.4) whenever you update Kadvia; older copies don't describe
 the newer tools.
 
 ## Privacy

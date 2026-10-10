@@ -10,18 +10,22 @@ AI assistant how to use it well:
   anywhere in the history;
 - **edit imported STEP files**: resize holes, remove fillets and chamfers, push/pull and move
   faces, add new features, export STEP again;
-- put parts together in **assemblies** with mates, DOF diagnostics, a bill of materials and an
-  interference check;
-- make dimensioned **2D drawings** (standard, detail and section views, notes, title block) and
-  export PDF, DXF or SVG;
+- put parts together in **assemblies** with mates (including gear, rack-and-pinion, cam, limit,
+  symmetric and width mates), rigid **sub-assemblies**, DOF diagnostics, a top-level, indented or
+  flat bill of materials and an interference check;
+- make dimensioned **2D drawings** of parts, assemblies and STEP models: standard, detail, section
+  and exploded views, ordinate/baseline/chain dimensions, **tolerances and ISO fits**, **GD&T**
+  (datums, feature control frames) and surface finish, **BOM tables and balloons**, multiple
+  sheets and a title block, exported as PDF, DXF or SVG;
 - run a **design check** for CNC, 3D printing (FDM/SLA), injection molding or sheet metal and
   fix the issues it finds;
 - verify everything with exact mass properties, measurements and screenshots;
 - save `.kadvia` / `.kasm` / `.kdraw`, or export STEP/STL.
 
-> Status: preview (v0.3). Parametric modeling (sketch, extrude, revolve, holes, fillets,
+> Status: preview (v0.4). Parametric modeling (sketch, extrude, revolve, holes, fillets,
 > chamfers, patterns, mirror, loft, sweep, shell, draft), reference images, imported-STEP
-> editing, assemblies, 2D drawings, design check, viewing and inspection.
+> editing, assemblies with sub-assemblies and motion mates, 2D drawings of parts and assemblies
+> with tolerances, GD&T, BOM and balloons, design check, viewing and inspection.
 
 The Kadvia MCP server already sends core instructions to every client, so this repository is
 optional — it makes results better (design rules, workflows, worked examples).
@@ -33,7 +37,7 @@ optional — it makes results better (design rules, workflows, worked examples).
 | `instructions/AGENTS.md` | **Any AI client**: use as Cursor rules, Codex `AGENTS.md`, Gemini `GEMINI.md`, VS Code Copilot instructions, or a system prompt |
 | `skills/kadvia/` | The same guidance in the open **Agent Skills** format (`SKILL.md` + references + examples), e.g. for Claude |
 | `skills/kadvia/references/` | Modeling operations, image-to-CAD and reference images, editing STEP files, assemblies, drawings, design check, design rules (DFM), views & conventions, troubleshooting |
-| `skills/kadvia/examples/` | Worked examples: L-bracket, flange, enclosure, inspecting a STEP file (more in each reference: bracket-on-plate assembly, L-bracket drawing, STEP hole resize, CNC design-check fix, photo tracing) |
+| `skills/kadvia/examples/` | Worked examples: L-bracket, flange, enclosure, inspecting a STEP file (more in each reference: bracket-on-plate assembly, gear pair, L-bracket drawing, toleranced flange drawing with GD&T, assembly drawing with BOM and balloons, STEP hole resize, CNC design-check fix, photo tracing) |
 | `install/README.md` | Install Kadvia and connect your AI client |
 
 ## Quick start
@@ -74,11 +78,17 @@ still get every number (bounding box, volume, mass).
 - "Bolt the bracket to the plate with an M6 bolt and check nothing collides."
 - "Make an assembly of the enclosure and its lid, and give me a BOM with masses in PETG."
 - "Why can the shaft still move? Fix the mates so only rotation is free."
+- "Mesh a 20-tooth pinion with a 40-tooth gear, module 2, and turn the pinion 30°."
+- "Limit the slider's travel to 10–60 mm."
+- "Use the saved bracket-on-plate assembly twice on this base and give me an indented BOM and a flat parts list."
 
 **2D drawings**
 - "Make an A4 drawing of the bracket with material AL 6061-T6 and tolerance ISO 2768-m, then export a PDF and a DXF."
 - "Add a section view through the holes and a detail view of the bend."
 - "Switch the drawing to third-angle projection on A3."
+- "Make the bore an H7 fit, the thickness ±0.1, and add a position tolerance for the bolt holes to datums A and B."
+- "Dimension the hole positions as ordinates from the left edge."
+- "Make an assembly drawing with a parts list and balloons, and an exploded view on a second sheet."
 
 **Design check**
 - "Can this be machined on a 3-axis mill with a 6 mm cutter? Fix what can't."

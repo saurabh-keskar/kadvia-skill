@@ -52,7 +52,12 @@ that operation and resend the **whole corrected batch**.
 | Part lands upside down / on the wrong side | Normals opposed vs aligned | `update_mate` with `flip: true` |
 | `dof` > 0 that you didn't expect | A motion is still free (`underConstrained` lists the components) | Add a `parallel`, `distance` or second `concentric` mate |
 | A mate `redundant` | It is implied by others | Usually fine; remove duplicates |
-| Interference sliver ~0.05 mm | Pin exactly the size of its hole (mesh tolerance) | Ignore; real overlaps are much deeper |
+| Interference sliver ~0.05 mm | Pin exactly the size of its hole, or two gear blanks touching at their pitch circles (mesh tolerance) | Ignore; real overlaps are much deeper |
+| "a gear mate needs `ratio`" (or `rack_pinion` needs `value`, `symmetric` needs `c`, `width` needs `c` and `d`) | A required field of that mate type is missing | Add it: ratio = teeth A / teeth B; rack value = π × pitch diameter |
+| Gears turn but drift off their axes, or `dof` is higher than expected | A gear or rack mate doesn't hold the axis | Hinge each gear (concentric or point-on-axis coincident + a face coincident) and put the rack on a slide |
+| A limit mate never shows as constraining | Inside its range a limit mate adds nothing (by design) | Fine; it holds only at `min`/`max` |
+| Mate into a sub-assembly picks the wrong body | References use the sub-assembly's coordinates; without `body` the nearest body wins | Use sub-assembly coordinates and `"body": "<child>.<body>"` |
+| Sub-assembly can't be inserted from an open model | It has no file yet or has unsaved changes | Save the sub-assembly (`.kasm`) first, or use its `path` |
 
 ## Drawings
 | Error / symptom | Likely cause | Fix |
@@ -60,4 +65,9 @@ that operation and resend the **whole corrected batch**.
 | Batch refused: dimension cannot be measured | Wrong edge id, or a ref that doesn't fit the `kind` (a circle for `vertical`, a line for `diameter`) | `kadvia:get_drawing` for the current ids; match the `kind` to the edge `shape` |
 | A warning about a dimension whose edge disappeared | The part changed and the edge is gone | `remove_dimension` and add it again with a new id |
 | `kadvia:save_part` on a drawing fails | The source part has no file yet | Save the part (`.kadvia`) first, then the drawing (`.kdraw`) |
-| Views overlap or run into the title block | Automatic layout after adding views or changing the sheet | `move_view`, a bigger `sheet_size`, or a smaller `scale` |
+| Views overlap or run into the title block | Automatic layout after adding views or changing the sheet | `move_view`, a bigger `sheet_size`, a smaller `scale`, or move views to a new sheet (`add_sheet`, `move_view {id, sheet}`) |
+| Batch refused on a `fit` tolerance | The fit or size is outside the ISO 286 tables (letters D–P / d–p, IT5–IT11, ≤ 500 mm) | Use a supported fit, or a `deviation` tolerance with the values |
+| Batch refused on a feature control frame | Datums on a form tolerance (flatness, …), or none on an orientation/runout tolerance; more than 3 datums | Remove or add `datums` to match the characteristic |
+| Balloon shows the wrong or no number | The ref isn't on the intended component, or the item isn't in the BOM | Use an edge id with that component's prefix (`bolt/b0:e4.mid`); `auto_balloon` to fill missing items |
+| DXF export wrote several files | The drawing has several sheets | Expected (`name-1.dxf`, …); pass `sheet` for one file |
+| An older Kadvia can't open the `.kdraw` | It uses newer drawing features (sheets, tolerances, GD&T, assembly sources) | Send PDF/DXF, or have the other person update Kadvia |

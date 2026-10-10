@@ -65,7 +65,7 @@ process; see [design-check.md](design-check.md).
 - **Threads:** depth 1.5×d. Avoid threads smaller than M3 in aluminium.
 - **External edges:** break them with a 0.2–0.5 mm chamfer. Sharp outside corners are fine.
 - **Access:** keep features reachable from as few sides as possible (ideally top and bottom). Avoid undercuts.
-- **Tolerances:** ±0.1 mm by default. Ask before specifying anything tighter.
+- **Tolerances:** ±0.1 mm by default. Ask before specifying anything tighter. Put the tight ones on the drawing (ISO fits such as H7 for bearing seats and dowel holes, GD&T for datum-related features; see [drawings.md](drawings.md#8-tolerances-and-fits)).
 
 ## 5. Sheet metal
 Kadvia has no bend, flange or unfold features yet. Model sheet-metal parts as a solid with
