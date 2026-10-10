@@ -120,9 +120,11 @@ supersampled.
 | `quality` | `"standard"` (default: CAD look with edges, for checking geometry) or `"render"` |
 | `environment` | Only with `quality: "render"`: `"studio"` (default, soft boxes), `"outdoor"` (sky and sun), `"warehouse"` (overhead strip lights) |
 | `background` | `"environment"` (default for renders, soft backdrop), `"white"`, `"gradient"`, `"transparent"` (PNG with alpha, for compositing) |
-| `views`, `width`, `height` | Standard views, fitted; 64–2048 px |
+| `views`, `width`, `height` | Standard views or custom directions `{"from": [x, y, z], "name"?}`, fitted; 64–2048 px |
+| `projection` | `"ortho"` or `"persp"` (a natural, slightly dramatic look for product shots) |
 
 - Use 1–2 views at 1200–2048 px for a product shot, and the standard quality for checking geometry (edges help).
+- For a hero angle other than `iso`, use a custom direction with perspective, for example `{"views": [{"from": [-1, -1.6, 0.7], "name": "hero"}], "quality": "render", "projection": "persp"}` (front left, slightly above).
 - Renders show every open model: close or mention the others first.
 - Parts without a material or appearance render in a neutral grey; set at least a material for a convincing shot.
 - `environment` without `quality: "render"` is refused.

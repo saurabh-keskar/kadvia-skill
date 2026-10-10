@@ -43,14 +43,15 @@ with *"Check it for 3D printing"* (design check) or *"Make a drawing of it and e
 
 ## 4. Optional: add the instructions
 The MCP server already sends core instructions. For better results add this repository's
-guidance (design rules, workflows for standard holes and threads, sketch tools and DXF import,
-materials and renders, assemblies, drawings, STEP editing and design checks, worked examples):
+guidance (design rules, workflows for standard holes and threads, sketch tools and DXF
+import/export, materials and renders, assemblies and motion, drawings, STEP editing and design
+checks, worked examples):
 - clients with Agent Skills support: copy `skills/kadvia` into the client's skills folder
   (for example `~/.claude/skills/kadvia`), or upload the zipped folder as a skill;
 - other clients: use `instructions/AGENTS.md` as project rules or a system prompt (see the
   main [README](../README.md#quick-start) for where each client reads it).
 
-Update to the latest version (v0.5) whenever you update Kadvia; older copies don't describe
+Update to the latest version (v0.6) whenever you update Kadvia; older copies don't describe
 the newer tools.
 
 ## Privacy

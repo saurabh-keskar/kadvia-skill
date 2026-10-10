@@ -67,6 +67,10 @@ that operation and resend the **whole corrected batch**.
 | Labels or title block became profiles | TEXT/MTEXT and border layers were imported | `"text": false`, or pick the outline `layers` |
 | Many entities `skipped` | HATCH, DIMENSION, LEADER, 3D entities are not imported | Fine for outlines; tell the user what was left out |
 | Text characters missing | No glyph in the bundled fonts | Use plain Latin characters |
+| `bad_request` "DXF export writes one sketch" | `format: "dxf"` or a `.dxf` path without `sketch` | Add `sketch` (a sketch feature id from `kadvia:get_part`); a drawing with views uses `kadvia:export_drawing` |
+| `bad_request` "`sketch` exports a 2D DXF, but the format is …" | `sketch` given with a `.step`/`.stl`/… path or format | Use a `.dxf` path, or drop `sketch` for a 3D export |
+| Sketch DXF export refused for a sketch | The sketch has only `profiles` (no `entities`), or the model isn't a part | Export a sketch drawn with `entities` (or imported from DXF); for an outline of a solid make a drawing and `kadvia:export_drawing` |
+| Exported DXF has extra lines | Construction geometry is written on layer `CONSTRUCTION` | Tell the user to hide or delete that layer before cutting |
 
 ## Imported STEP edits
 | Error / symptom | Likely cause | Fix |
@@ -91,6 +95,21 @@ that operation and resend the **whole corrected batch**.
 | A limit mate never shows as constraining | Inside its range a limit mate adds nothing (by design) | Fine; it holds only at `min`/`max` |
 | Mate into a sub-assembly picks the wrong body | References use the sub-assembly's coordinates; without `body` the nearest body wins | Use sub-assembly coordinates and `"body": "<child>.<body>"` |
 | Sub-assembly can't be inserted from an open model | It has no file yet or has unsaved changes | Save the sub-assembly (`.kasm`) first, or use its `path` |
+| `kadvia:solve_assembly` drag moves nothing (0 components moved) | The component is fully constrained or grounded, or the target asks for a motion its mates don't allow | Read `solve.dof` and `underConstrained`; drag a component that can move, with a `target` along its free motion |
+| The dragged pose is gone afterwards | `kadvia:solve_assembly` never commits | Write the returned transform with `update_component`, or drive a mate with `update_mate` |
+| `kadvia:mate_options` refused | `a` or `b` is not a mate reference with a `component` | Use the `add_mate` form: `{"component": "c1", "face": {...}}` (one of `face`, `edge`, `vertex`, `point`, `axis`, `plane`) |
+
+## Viewing, selection and rebuild
+| Error / symptom | Likely cause | Fix |
+|---|---|---|
+| `bad_request` "give either view or from, not both" | `kadvia:set_view` got a standard view and a direction | Keep one |
+| `bad_request` "nothing to change" | `kadvia:set_view` got none of `view`, `from`, `projection`, `section` | Give at least one |
+| `bad_request` non-zero direction | A `from` of `[0, 0, 0]` (or non-numbers) | Use a real direction from the model toward the camera, e.g. `[0, 0, -1]` |
+| The section view keeps appearing in renders | A section turned on with `kadvia:set_view` stays on | `kadvia:set_view {"section": {"axis": "off"}}`, or pass `"section": {"axis": "off"}` to `kadvia:render_views` |
+| `bad_request` "a face needs its numeric id" | A `face`/`edge`/`vertex` item in `kadvia:set_selection` without `id` | Add the numeric id (only `body` items go without one) |
+| `kadvia:set_selection` selected fewer items than sent | Unknown ids are skipped (ids changed after an edit, wrong `body_id`) | Get fresh ids (`kadvia:get_selection`, `kadvia:recognize_features`); assembly bodies are `"<componentId>/<bodyId>"` |
+| `kadvia:rebuild_part` refused on an imported model | STEP models have no features | Close and reopen the file to reload it, or `kadvia:convert_to_part` |
+| A part still shows the old geometry after a linked STEP file changed | Cached steps were reused | `kadvia:rebuild_part {"force": true}` re-reads files inserted with `"link": true` (STEP data stored in the part, the default, never follows the file: insert it again) |
 
 ## Drawings
 | Error / symptom | Likely cause | Fix |

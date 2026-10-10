@@ -13,14 +13,14 @@ Kadvia is a desktop CAD application. The AI controls the **running app** through
 What it can do:
 - **Model parametric parts:** text-to-CAD, image-to-CAD (tracing over calibrated reference images), and edits through parameters.
 - **Standard holes and threads:** hole wizard (tapped, clearance, counterbore, countersink, counterdrill; ISO metric and inch sizes) and cosmetic or modeled threads.
-- **Sketch tools:** splines, ellipses, slots, arc slots, text, conics, construction lines; trim, extend, offset, fillet, mirror, patterns, projected edges; DXF import.
+- **Sketch tools:** splines, ellipses, slots, arc slots, text, conics, construction lines; trim, extend, offset, fillet, mirror, patterns, projected edges; DXF import, and any sketch exported as DXF.
 - **Materials and appearance:** a library of 22 engineering materials (real mass), colours and finishes per part, body or face, and product renders.
 - **Edit imported STEP files:** convert to a part, recognise holes and fillets, resize holes, delete, offset and move faces.
-- **Assemblies** (`.kasm`): place parts and rigid sub-assemblies, mate them (including gear, rack and pinion, cam and limit mates), check DOF, BOM (top-level, indented, flat) and interference.
+- **Assemblies** (`.kasm`): place parts and rigid sub-assemblies, mate them (including gear, rack and pinion, cam and limit mates), check DOF, get mate suggestions, preview how a mechanism moves, BOM (top-level, indented, flat) and interference.
 - **2D drawings** (`.kdraw`) of parts, assemblies and STEP models: auto-dimensioned views, detail, section and exploded views, ordinate/baseline/chain dimensions, tolerances and ISO fits, GD&T and surface finish, BOM tables and balloons, multiple sheets, title block, PDF/DXF/SVG.
 - **Design check:** manufacturability for CNC, FDM/SLA printing, injection molding and sheet metal.
-- **Inspect models:** open files, measure exactly, take screenshots and read the user's selection (faces, edges, vertices, bodies).
-- **Save and export:** `.kadvia`, `.kasm`, `.kdraw`; STEP, STL, 3MF or OBJ.
+- **Inspect and present models:** open files, measure exactly, take screenshots from standard or custom angles (perspective, sections), read the user's selection (faces, edges, vertices, bodies) and highlight things for the user.
+- **Save and export:** `.kadvia`, `.kasm`, `.kdraw`; STEP, STL, 3MF or OBJ; a sketch as DXF.
 
 ## Conventions
 - Units: **mm** and **degrees**. Areas are mm² and volumes mm³. Convert only when the user asks.
@@ -44,19 +44,21 @@ Details: [references/views-and-conventions.md](../skills/kadvia/references/views
 | `solve_sketch` / `edit_sketch` | Check a constrained sketch / preview sketch edits (trim, offset, fillet, mirror, patterns, …) without changing the part |
 | `inspect_dxf` / `import_dxf` | Read a DXF's layers, units and extents / import it as a sketch (new part or existing one) |
 | `undo` / `redo` | Step back or forward through committed changes (parts, assemblies, drawings) |
+| `rebuild_part` | Regenerate a part without changing it (`force: true` re-reads linked files), reload an assembly's component files, or re-project a drawing |
 | `mass_properties` / `measure` | Exact volume, area, centre of mass, mass (from the assigned materials); exact lengths, radii, distances and angles of faces/edges |
 | `list_materials` / `set_material` / `set_appearance` | Material library; assign a material (part, body, assembly component); colour and finish (part, body, faces; display only) |
-| `render_views` | See the model: 1–8 standard views as images (optional section, reference images; `quality: "render"` for product shots) |
+| `render_views` | See the model: 1–8 views as images, standard (`"iso"`, `"top"`, …) or custom directions `{"from": [x, y, z], "name"?}`; `projection` `ortho`/`persp`, optional section, reference images; `quality: "render"` for product shots |
 | `check_design` | Manufacturability check for a process, with locations and fixes |
 | `open_step_file` | Open `.step`/`.stp` (imported), `.kadvia` (part), `.kasm` (assembly) or `.kdraw` (drawing) |
 | `convert_to_part` / `recognize_features` | Make an imported STEP editable; list holes (with wizard size and thread), bosses, fillets and chamfers |
 | `new_assembly` / `get_assembly` / `apply_assembly_operations` | Build and edit assemblies (components, sub-assemblies, mates) |
+| `mate_options` / `solve_assembly` | Which mate types fit two references / preview motion by dragging a component (nothing committed) |
 | `assembly_bom` / `check_interference` | Bill of materials (`structure`: `top`, `indented`, `flat`); overlapping components |
 | `new_drawing` / `get_drawing` / `apply_drawing_operations` / `export_drawing` | 2D drawings of parts, assemblies or STEP models: create, read edge ids, edit (sheets, dimensions, tolerances, GD&T, BOM, balloons), write PDF/DXF/SVG |
-| `save_part` / `export_model` | Write `.kadvia`/`.kasm`/`.kdraw` / STEP, STL, 3MF or OBJ (only when the user asks or agrees) |
+| `save_part` / `export_model` | Write `.kadvia`/`.kasm`/`.kdraw` / STEP, STL, 3MF or OBJ, or one sketch as DXF (`sketch`) (only when the user asks or agrees) |
 | `list_models` / `get_model_info` | Bodies, faces, edges, bbox, volume, warnings of any model |
-| `set_view` / `fit_view` / `set_display_mode` | Present things in the user's viewport |
-| `get_selection` | What the user clicked (faces, edges, vertices with their `point`, bodies) |
+| `set_view` / `fit_view` / `set_display_mode` | Present things in the user's viewport: standard `view` or a direction `from`, `projection`, section view on/off; zoom to fit; display mode |
+| `get_selection` / `set_selection` | What the user clicked (faces, edges, vertices with their `point`, bodies) / highlight faces, edges, vertices or bodies for the user (replaces their selection; `[]` clears) |
 | `close_model` | Remove a model from the window (confirm first; save before closing) |
 
 ## Modeling checklist (copy it and tick it off)
@@ -148,8 +150,9 @@ Worked examples (four M5 tapped holes 10 deep, counterbored holes for M6 socket 
 - Text: `{"id": "t1", "type": "text", "at": [0, 0], "text": "LOT 42", "height": 5, "align": "center"}` on a face sketch, then an extrude `"direction": "reverse", "operation": "cut"` engraves it (`"add"` embosses).
 - Edit sketches with `trim`, `extend`, `split`, `offset`, `fillet`, `chamfer`, `mirror`, `move`, `rotate`, `scale`, `linear_pattern`, `circular_pattern`, `explode`, `construction`, `delete`, `project`: preview with `edit_sketch` (changes nothing), commit with the `{"op": "edit_sketch", "id": "s1", "edits": [...]}` operation.
 - DXF: `inspect_dxf` (layers, units, extents) → `import_dxf` (`layers`, `units`, `origin: "center"`, `text: false` to skip labels; without `model_id` it makes a new part with sketch `dxf1`) → extrude the sketch.
+- Sketch → DXF (laser or waterjet cutting, other CAD): `export_model {"model_id": "m1", "path": "~/cut/plate.dxf", "sketch": "s1"}` writes that sketch's solved entities in sketch coordinates (mm). The sketch needs `entities` (a sketch with only `profiles` can't be exported); a dimensioned 2D drawing goes through `export_drawing`.
 
-Worked examples (engrave text 0.5 mm deep, import a DXF outline and extrude it 3 mm, offset and fillet a sketch) and limits: [references/sketch-tools.md](../skills/kadvia/references/sketch-tools.md).
+Worked examples (engrave text 0.5 mm deep, import a DXF outline and extrude it 3 mm, offset and fillet a sketch), DXF export and limits: [references/sketch-tools.md](../skills/kadvia/references/sketch-tools.md).
 
 ## Editing an existing part
 1. `get_part`: read the parameter names, feature ids and current status. For a STEP file (kind `imported`) there are no parameters: convert it (see [Editing imported STEP files](#editing-imported-step-files)).
@@ -163,6 +166,7 @@ Worked examples (engrave text 0.5 mm deep, import a DXF outline and extrude it 3
 5. If a new dimension appears, add a parameter for it in the same batch.
 6. For risky changes, use `dry_run: true` first. Use `undo` to back out a committed step the user doesn't like.
 7. **Rollback bar:** `{"op": "set_rollback", "to": "<feature id>"}` regenerates only up to that feature (later ones show `skipped`). While rolled back, `add_feature` without `after` inserts at the bar. `{"op": "set_rollback"}` rolls forward again; always do that before you finish.
+8. **A file changed outside Kadvia** (a STEP file inserted with `"link": true` was re-exported, a component part was saved by someone else): `rebuild_part {"model_id": "m1", "force": true}` re-runs every feature and re-reads linked files (no undo step); on an assembly it reloads the component files and re-solves. Check the `changes` and feature status, then render. STEP data stored in the part (the default, and `convert_to_part`) does not follow the file.
 
 ## Editing imported STEP files
 1. `open_step_file` → kind `imported`. `convert_to_part` → a **new** part whose first feature holds the solids (the STEP data is stored in it). If conversion fails, nothing is created: the file stays view-only; offer a parametric rebuild.
@@ -187,11 +191,12 @@ refused and nothing changes. Workflow, selectors and honest limits: [references/
 ## Assemblies
 1. Build or open the parts first; read their geometry (mate references use each **part's own coordinates**).
 2. `new_assembly`, then `apply_assembly_operations` with `add_component` (`source`: `{"model": "<open part id>"}`, `{"path": ...}` or `{"step": ...}`; rough `transform.position`). The first component is grounded. A saved `.kasm` as `path` is a **rigid sub-assembly** (mate references use its own coordinates).
-3. Add mates in small batches: `coincident`, `concentric`, `distance`, `angle`, `parallel`, `perpendicular`, `tangent`, `fixed`, `lock`; `flip: true` reverses a coincident/distance/angle/tangent sense.
+3. Add mates in small batches: `coincident`, `concentric`, `distance`, `angle`, `parallel`, `perpendicular`, `tangent`, `fixed`, `lock`; `flip: true` reverses a coincident/distance/angle/tangent sense. Unsure which mate fits two references? `mate_options {"model_id", "a", "b"}` (references in the `add_mate` form) lists the fitting types, best first, and changes nothing.
    - Limits: `distance`/`angle` with `min`/`max` instead of `value` (a stroke or opening range).
    - Motion: `gear` (`ratio` = teeth A / teeth B), `rack_pinion` (`value` = π × pitch diameter, mm per turn), `cam` (follower on a cam face). Hold their axes with other mates first.
    - Centring: `symmetric` (`c` = mirror plane), `width` (`a`, `b` slot faces; `c`, `d` tab faces).
 4. After each batch read `solve.status`, `solve.dof`, `underConstrained` and each mate's `status` (`ok` / `redundant` / `conflicting` / `error`). A bolt keeping 1 DOF (spin) is fine; so is a gear train keeping 1 DOF.
+   - **Check how a mechanism moves:** `solve_assembly {"model_id": "m4", "drag": {"component": "slider", "grab": [x, y, z], "target": [x, y, z]}}` (world points in mm) moves the component as far as its mates allow, like the user dragging it, and returns the `placements` of everything that moved. **Nothing is committed.** To keep the pose write the transform with `update_component`; to set an exact position drive a mate (`update_mate {"id": "turn", "patch": {"value": 30}}`), then `check_interference`.
 5. `render_views`, `check_interference`, `assembly_bom` (`structure: "indented"` or `"flat"` with sub-assemblies; masses and materials come from the parts' materials, or `set_material` with `component_id` overrides one component). Optional `set_exploded_view {scale}` (display only).
 6. `save_part` (`.kasm`, after saving the parts) and `export_model` (STEP: part solids placed through every level; STL: everything).
 
@@ -240,6 +245,14 @@ Rules, limits and a worked fix loop: [references/design-check.md](../skills/kadv
 | Before export | `mass_properties`: one closed body (unless intended), volume > 0, mass if the material is known; `check_design` for the process | all four default views |
 
 Always compute a rough hand estimate first. A result 2× off means a wrong plane, a wrong direction or a missed cut.
+
+## Pointing, viewing and custom angles
+- **Show the user which face you mean:** take the id from `get_selection`, `recognize_features` (face ids) or `get_model_info` (body ids), then `set_selection {"items": [{"model_id": "m1", "kind": "face", "body_id": "b0", "id": 12}]}` and refer to "the highlighted face". `kind` is `body`, `face`, `edge` or `vertex` (`id` for all but bodies; assembly bodies are `"<componentId>/<bodyId>"`). It replaces the user's selection, so read `get_selection` first if you still need theirs; `{"items": []}` clears it. Unknown ids are skipped: check how many were selected.
+- **Look from any angle:** `render_views {"views": ["iso", {"from": [0, 0, -1], "name": "under"}], "projection": "persp"}`. `from` points from the model toward the camera (a face normal looks straight at that face). Keep `ortho` (the usual default) for judging proportions; `persp` looks natural.
+- **Turn the user's camera:** `set_view` with `view` (standard) or `from` (a direction, not both), `projection` (`ortho`/`persp`, kept until changed) and `section` (`{"axis": "y", "offset": 20}` stays on, also in `render_views`, until `{"axis": "off"}`).
+- **Rebuild after files changed outside Kadvia:** `rebuild_part` (`force: true` for parts) instead of closing and reopening; imported STEP models have nothing to rebuild (reopen the file).
+
+Views, directions and section details: [references/views-and-conventions.md](../skills/kadvia/references/views-and-conventions.md#custom-directions-projection-and-sections).
 
 ## When something fails
 - A failed `apply_operations` (or assembly/drawing batch) changes **nothing**. The error gives the `code`, a message, the failing operation (`opIndex`) and feature or mate (`featureId`), plus a hint.

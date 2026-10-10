@@ -1,9 +1,9 @@
-# Sketch tools, DXF import and mesh exports
+# Sketch tools, DXF import/export and mesh exports
 
 Constrained sketches can hold splines, ellipses, elliptical arcs, slots, arc slots, text,
 conics and construction geometry besides points, lines, arcs and circles. Sketches can be edited
 with trim, extend, split, offset, fillet, chamfer, mirror, move/rotate/scale, patterns, explode
-and projected model edges. DXF files import as sketches. The live reference is
+and projected model edges. DXF files import as sketches, and any sketch exports as DXF. The live reference is
 `kadvia:modeling_reference {"topic": "sketch_tools"}` (basic entities, constraints and dimensions:
 topic `constraints`).
 
@@ -28,6 +28,7 @@ topic `constraints`).
 | Free-form outlines, ellipses, arc slots, text, conics | sketch `entities` (this page) |
 | Changing an existing sketch: trim, offset, fillet corners, mirror, pattern | `edit_sketch` (tool to preview, operation to commit) |
 | A laser-cut or legacy 2D outline the user has as a file | `kadvia:inspect_dxf` → `kadvia:import_dxf` → extrude |
+| A 2D outline for a laser or waterjet cutter, or for other CAD | `kadvia:export_model` with `sketch` (DXF) |
 | Engraved or embossed lettering, serial numbers, logos in text | a `text` entity, then a cut or add extrude |
 
 ## 2. New sketch entities
@@ -150,7 +151,15 @@ pocket that follows an existing contour.
 
 ## 8. Exports
 - `kadvia:export_model` formats: `step` (exact geometry, CAD/CNC), `stl`, `3mf` (mesh package in mm, preferred by most slicers) and `obj` (mesh). The format comes from `format` or the file extension.
-- **Sketch as DXF:** the AI tools have no direct sketch-to-DXF export in this version. For a flat outline as DXF, make a drawing of the part (`kadvia:new_drawing` with `"views": ["top"]`, `"scale": "1:1"`, `"auto_dimension": false`) and `kadvia:export_drawing` to `.dxf`; tell the user the file also contains the sheet frame and title block.
+- **Sketch as DXF** (laser or waterjet cutting, other CAD): `kadvia:export_model` with `sketch` (the sketch feature id from `kadvia:get_part`):
+
+```json
+{"model_id": "m1", "path": "~/cut/gasket.dxf", "sketch": "dxf1"}
+```
+  - The format is DXF when `sketch` is given and the path ends in `.dxf` or has no extension (`.dxf` is added); `"format": "dxf"` says it explicitly.
+  - It writes the **solved** entities of that sketch in sketch coordinates (mm, 1:1), as DXF R12: lines, arcs, circles and points; splines, ellipses and text outlines as polylines. Normal geometry goes on layer `SKETCH`, construction geometry on layer `CONSTRUCTION` (tell the user to ignore or delete that layer for cutting).
+  - Parts only, and the sketch needs `entities`: a sketch made only of `profiles` (rect, circle, …) can't be exported. A drawing with views, dimensions and a title block goes through `kadvia:export_drawing` instead.
+  - Typical round trip: `kadvia:import_dxf` → edit the sketch (`edit_sketch` offset, fillet) → export it again as DXF for the cutter.
 
 ## 9. Worked example: engrave text 0.5 mm deep
 **User:** "Engrave 'LOT 42' on the top of the plate, 5 mm high, 0.5 mm deep."
@@ -221,4 +230,4 @@ the original as construction.
 - Projected edges are picked by nearest point (like `near` selectors), not by topology.
 - DXF: no ACIS solids, hatch boundaries, dimensions or line types; text uses the bundled fonts.
 - Text is one line per entity, without kerning beyond the font's own.
-- No direct sketch-to-DXF export through the AI tools (see [Exports](#8-exports)).
+- Sketch DXF export writes one sketch per file, without dimensions or constraints (see [Exports](#8-exports)).

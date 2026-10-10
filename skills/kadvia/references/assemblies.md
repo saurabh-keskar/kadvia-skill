@@ -28,10 +28,13 @@ indented or flat) and checks for interference. The live reference is
 | `kadvia:new_assembly` | Create an empty assembly (kind `assembly`) in the user's window |
 | `kadvia:get_assembly` | Read components, mates and the solve status (call it before editing an assembly you did not just build) |
 | `kadvia:apply_assembly_operations` | Add/update/remove components and mates as **one transaction** (one solve, one undo step); `dry_run: true` checks without committing |
+| `kadvia:mate_options` | Which mate types fit two references, best first, with each reference's world geometry (changes nothing) |
+| `kadvia:solve_assembly` | Re-solve, or drag one component as far as its mates allow, and see what moves (**nothing committed**) |
 | `kadvia:assembly_bom` | Bill of materials: components grouped by source with quantities, material and mass (from the parts' materials, or `density_g_cm3`); `structure`: `top` (default), `indented` or `flat` |
 | `kadvia:set_material` with `component_id` | Override the material of one component (for example the same part in steel and in brass); `null` removes the override |
 | `kadvia:check_interference` | Overlapping solids between components, part by part inside sub-assemblies (approximate volume and depth) |
 | `kadvia:new_drawing` with the assembly as `source` | An assembly drawing with a BOM table and balloons (see [drawings.md](drawings.md)) |
+| `kadvia:rebuild_part` | Reload component files that changed on disk and re-solve (one undo step) |
 | `kadvia:undo` / `kadvia:redo`, `kadvia:save_part` (writes `.kasm`), `kadvia:export_model`, `kadvia:mass_properties`, `kadvia:measure`, `kadvia:render_views` | Work on assemblies too |
 
 `kadvia:open_step_file` opens a saved `.kasm` file (kind `assembly`).
@@ -41,7 +44,8 @@ indented or flat) and checks for interference. The live reference is
 - [ ] Read each part's geometry (`kadvia:get_part` bbox, or `kadvia:recognize_features` for hole centres): mate references use the **part's own coordinates**.
 - [ ] `kadvia:new_assembly {"name": "..."}`.
 - [ ] Batch 1: `add_component` for every part. The first one is grounded (`fixed: true`). Give the others a rough starting `transform.position` near where they go: the solver moves components as little as possible from where they start.
-- [ ] Batches 2…n: mates in small groups (one component at a time). After each batch read `solve.status`, `solve.dof`, `underConstrained` and every mate's `status`.
+- [ ] Batches 2…n: mates in small groups (one component at a time). Unsure which mate fits? `kadvia:mate_options` first. After each batch read `solve.status`, `solve.dof`, `underConstrained` and every mate's `status`.
+- [ ] Mechanisms: check the motion with a `kadvia:solve_assembly` drag (see [Checking how a mechanism moves](#checking-how-a-mechanism-moves)).
 - [ ] `kadvia:render_views` (`iso` plus a view that shows the contact faces).
 - [ ] `kadvia:check_interference`, then `kadvia:assembly_bom`.
 - [ ] Offer `kadvia:save_part` (`.kasm`; save unsaved parts first so the assembly can reference their files) and `kadvia:export_model`.
@@ -100,7 +104,20 @@ Details and examples for the last six rows: [sections 8–10](#8-motion-mates-ge
 
 Other operations: `update_mate {id, patch}`, `remove_mate {id}`, `set_parameter` /
 `delete_parameter` (assembly parameters usable in mate values), `rename_assembly {name}`,
-`set_exploded_view {scale}`, `rebuild` (reload part files that changed on disk).
+`set_exploded_view {scale}`, `rebuild` (reload part files that changed on disk; the
+`kadvia:rebuild_part` tool does the same).
+
+**Which mate?** `kadvia:mate_options` takes two references in the same form as `add_mate` and
+lists the mate types that fit, best first, with the world geometry each reference resolves to
+(plane, axis, point or circle with origin, direction and radius). Nothing changes. Use it when
+unsure, or to check that a selector picks the face you meant before adding the mate:
+
+```json
+{"model_id": "m4",
+ "a": {"component": "plate", "face": {"surface": "cylinder", "near": [[43.3, 25, 5]]}},
+ "b": {"component": "bolt", "face": {"surface": "cylinder", "radius": 3}}}
+```
+(The plate hole and the bolt shaft of [section 7](#7-worked-example-bracket-bolted-to-a-plate).) Two cylinders → `concentric` first; two planes → `coincident`, `distance`, `parallel`, `angle`.
 
 Patterns that work:
 - **Bolt or pin in a hole:** `concentric` (shaft ↔ hole wall) + `coincident` (head underside ↔ seating face). The bolt keeps 1 DOF (spin about its axis), which is fine.
@@ -226,6 +243,30 @@ How they behave:
 ```
 (62.832 = π × 20: a 20 mm pitch-diameter pinion.)
 
+### Checking how a mechanism moves
+`kadvia:solve_assembly` solves the mates **without committing anything**. With a `drag` it moves
+one component the way the user would drag it with the mouse: `grab` is a world point on the
+component, `target` is where that point should go (both mm). The component moves as far as its
+mates allow and everything coupled to it follows (gears, racks, cams, linkages; limit mates
+stop it at their bounds).
+
+```json
+{"model_id": "m4", "drag": {"component": "pinion", "grab": [70, 50, 18], "target": [50, 70, 18]}}
+```
+(In the [gear pair](#10-worked-example-gear-pair) before the `turn` mate: a point on the pinion's rim, 20 mm from its axis at (50, 50), is dragged a quarter turn around it; the gear should turn half as far the other way.)
+
+The result has the `solve` status (dof, failing or redundant mates), `moved` (component ids) and
+the new `placements` (`transform`) of the components that moved. Use it to answer "does the
+slider slide?", "does the crank turn the rocker?", "what else moves?". Then:
+- keep the pose: `update_component {"id": "pinion", "patch": {"transform": <returned transform>}}`
+  for each moved component (or ask the user to drag it themselves);
+- set an exact position: drive a mate instead (`update_mate {"id": "turn", "patch": {"value": 30}}`)
+  and run `kadvia:check_interference` at that pose;
+- nothing moved: the component is grounded or fully constrained, or the target asks for a
+  motion its mates don't allow (read `solve.dof` and `underConstrained`).
+
+Without `drag` it re-solves and reports which components differ from their saved placement.
+
 ## 9. Limit, symmetric and width mates
 - **Limit mate:** a `distance` or `angle` mate with `min` and/or `max` instead of `value`. Inside the range it adds no constraint (DOF unchanged, never `redundant`); at a bound it holds like a normal mate, so motion and dragging stop there. Use it for a slider's stroke or a hinge's opening angle. Angle limits stay within 0–180°.
 - **Symmetric:** `a` and `b` (two points, planes or axes) are mirror images about the plane `c`. Use it to keep two jaws or two sliders centred.
@@ -315,7 +356,7 @@ inside it, and it moves in the parent as one body.
 ```
 - Source: `{"path": "<.kasm>"}`, or `{"model": "<open assembly id>"}` once that assembly is saved and has no unsaved changes.
 - Mate references into a sub-assembly use **the sub-assembly's own coordinates**. Its bodies are named `<child>.<body>` (`plate.b0`; nested: `<child>.<grandchild>.<body>`). Without `body`, a `near` or `vertex` pick chooses the nearest body; `"body": "plate.b0"` names one explicitly.
-- To change a sub-assembly, open its `.kasm`, edit, save; the parent reloads it (`{"op": "rebuild"}` forces a reload).
+- To change a sub-assembly, open its `.kasm`, edit, save; the parent reloads it (`{"op": "rebuild"}` or `kadvia:rebuild_part` forces a reload).
 - `kadvia:assembly_bom` with `structure: "indented"` lists its contents under its row (2.1, 2.2, …); `"flat"` adds its parts to the totals.
 - `kadvia:check_interference` checks its parts one by one (pairs named like `"s1/bolt"`); `components: ["s1"]` checks everything inside `s1`.
 - STEP export places every part through all levels.
@@ -338,4 +379,5 @@ drawing. See [drawings.md](drawings.md#15-worked-example-assembly-drawing-with-b
 - Cam followers follow the cam face's triangulation, within its tolerance.
 - `kadvia:check_design` does not run on assemblies: check the component parts, and use `kadvia:check_interference` for the assembly.
 - Interference is computed on the display meshes, so volumes and depths are approximate.
+- `kadvia:solve_assembly` drags are previews: nothing is saved in the assembly until you write the transforms (`update_component`) or drive a mate.
 - Material overrides apply to a whole component; overrides on components inside a rigid sub-assembly are not applied when it is placed. STEP components have no material (no mass in the BOM unless `density_g_cm3` is given).

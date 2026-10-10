@@ -137,7 +137,7 @@ one chamfer. The `near` points come from `kadvia:recognize_features`.)
 ## 7. Inserting a STEP file into a part
 An `import` feature can also bring a STEP file into any part, for example to combine it with
 modeled features. The file is stored in the part unless `"link": true` (then it is re-read
-from disk on every regeneration):
+from disk on every regeneration; after the file changed, `kadvia:rebuild_part {"model_id": ..., "force": true}` picks up the new version):
 ```json
 [
   {"op": "add_feature", "feature": {"id": "bracket", "type": "import",

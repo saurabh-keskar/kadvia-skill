@@ -66,6 +66,7 @@ Kadvia replays the features in order (regeneration) every time something changes
 - Any invalid op or failing feature means **nothing changes**. The error names `operations[i]` and the feature id.
 - Ops run in order, so define parameters before the features that use them, and a sketch before its extrude.
 - `dry_run: true` validates and regenerates without committing.
+- Outside a batch: `kadvia:undo` / `kadvia:redo` step through the history; `kadvia:rebuild_part {"model_id": "...", "force"?: true}` regenerates the unchanged part (`force` re-runs every step and re-reads linked STEP files) without an undo step.
 - At most 200 operations per call; keep batches much smaller (one logical step).
 - `kadvia:set_parameters {"model_id": "...", "values": {"width": 120}}` is shorthand for `set_parameter` ops.
 

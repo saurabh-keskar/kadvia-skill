@@ -11,15 +11,17 @@ AI assistant how to use it well:
 - add **standard holes** with the hole wizard — tapped, clearance, counterbored, countersunk and
   counterdrilled, ISO metric and inch sizes — and **cosmetic or modeled threads**;
 - sketch with **splines, ellipses, slots, text and conics**, edit sketches with trim, extend,
-  offset, fillet, mirror and patterns, project model edges, and **import DXF** outlines;
+  offset, fillet, mirror and patterns, project model edges, **import DXF** outlines and
+  **export any sketch as DXF** for laser or waterjet cutting;
 - assign **materials** from a library of 22 engineering materials for real mass and BOM weights,
   set **colours and finishes** per part, body or face, and make **product renders** (studio,
   outdoor or warehouse lighting, transparent background);
 - **edit imported STEP files**: resize holes, remove fillets and chamfers, push/pull and move
   faces, add new features, export STEP again;
 - put parts together in **assemblies** with mates (including gear, rack-and-pinion, cam, limit,
-  symmetric and width mates), rigid **sub-assemblies**, DOF diagnostics, a top-level, indented or
-  flat bill of materials and an interference check;
+  symmetric and width mates), mate suggestions, rigid **sub-assemblies**, DOF diagnostics,
+  **motion previews** (drag a component and see what moves), a top-level, indented or flat bill
+  of materials and an interference check;
 - make dimensioned **2D drawings** of parts, assemblies and STEP models: standard, detail, section
   and exploded views, ordinate/baseline/chain dimensions, **tolerances and ISO fits**, **GD&T**
   (datums, feature control frames) and surface finish, standard **hole callouts** and thread
@@ -27,14 +29,18 @@ AI assistant how to use it well:
   SVG;
 - run a **design check** for CNC, 3D printing (FDM/SLA), injection molding or sheet metal and
   fix the issues it finds;
-- verify everything with exact mass properties, measurements and screenshots;
-- save `.kadvia` / `.kasm` / `.kdraw`, or export STEP, STL, 3MF or OBJ.
+- verify everything with exact mass properties, measurements and screenshots from any angle
+  (custom directions, perspective, sections), and **point at faces** by highlighting them in
+  your Kadvia window;
+- save `.kadvia` / `.kasm` / `.kdraw`, or export STEP, STL, 3MF, OBJ or a sketch as DXF.
 
-> Status: preview (v0.5). Parametric modeling (sketch, extrude, revolve, holes, fillets,
+> Status: preview (v0.6). Parametric modeling (sketch, extrude, revolve, holes, fillets,
 > chamfers, patterns, mirror, loft, sweep, shell, draft), hole wizard and threads, sketch tools
-> and DXF import, materials, appearances and product renders, reference images, imported-STEP
-> editing, assemblies with sub-assemblies and motion mates, 2D drawings of parts and assemblies
-> with tolerances, GD&T, hole callouts, BOM and balloons, design check, viewing and inspection.
+> and DXF import/export, materials, appearances and product renders, reference images,
+> imported-STEP editing, assemblies with sub-assemblies, motion mates, mate suggestions and
+> motion previews, 2D drawings of parts and assemblies with tolerances, GD&T, hole callouts, BOM
+> and balloons, design check, viewing (custom angles, perspective, sections), selection
+> highlighting, rebuild and inspection.
 
 The Kadvia MCP server already sends core instructions to every client, so this repository is
 optional — it makes results better (design rules, workflows, worked examples).
@@ -45,8 +51,8 @@ optional — it makes results better (design rules, workflows, worked examples).
 |---|---|
 | `instructions/AGENTS.md` | **Any AI client**: use as Cursor rules, Codex `AGENTS.md`, Gemini `GEMINI.md`, VS Code Copilot instructions, or a system prompt |
 | `skills/kadvia/` | The same guidance in the open **Agent Skills** format (`SKILL.md` + references + examples), e.g. for Claude |
-| `skills/kadvia/references/` | Modeling operations, holes and threads, sketch tools and DXF import, materials and appearance, image-to-CAD and reference images, editing STEP files, assemblies, drawings, design check, design rules (DFM), views & conventions, troubleshooting |
-| `skills/kadvia/examples/` | Worked examples: L-bracket, flange, enclosure, inspecting a STEP file (more in each reference: M5 tapped and M6 counterbored holes, engraved text, DXF outline to part, anodised aluminium product render, bracket-on-plate assembly, gear pair, L-bracket drawing, toleranced flange drawing with GD&T, assembly drawing with BOM and balloons, STEP hole resize, CNC design-check fix, photo tracing) |
+| `skills/kadvia/references/` | Modeling operations, holes and threads, sketch tools and DXF import/export, materials and appearance, image-to-CAD and reference images, editing STEP files, assemblies, drawings, design check, design rules (DFM), views & conventions, troubleshooting |
+| `skills/kadvia/examples/` | Worked examples: L-bracket, flange, enclosure, inspecting a STEP file (more in each reference: M5 tapped and M6 counterbored holes, engraved text, DXF outline to part and back to DXF, anodised aluminium product render, bracket-on-plate assembly, gear pair, L-bracket drawing, toleranced flange drawing with GD&T, assembly drawing with BOM and balloons, STEP hole resize, CNC design-check fix, photo tracing) |
 | `install/README.md` | Install Kadvia and connect your AI client |
 
 ## Quick start
@@ -84,6 +90,7 @@ still get every number (bounding box, volume, mass).
 - "Import ~/Downloads/gasket.dxf — only the OUTLINE layer — and extrude it 3 mm."
 - "Make an elliptical plate 80 × 50 with a 30 mm slot in the middle."
 - "Offset the outline 2 mm outward and round its corners R3."
+- "Export that sketch as a DXF for the laser cutter."
 
 **Materials and renders**
 - "Make it anodised blue aluminium and render a product shot on a transparent background."
@@ -106,6 +113,8 @@ still get every number (bounding box, volume, mass).
 - "Why can the shaft still move? Fix the mates so only rotation is free."
 - "Mesh a 20-tooth pinion with a 40-tooth gear, module 2, and turn the pinion 30°."
 - "Limit the slider's travel to 10–60 mm."
+- "Which mate should I use between the shaft and this bore?"
+- "Turn the crank a quarter turn and tell me how far the slider moves — don't change anything."
 - "Use the saved bracket-on-plate assembly twice on this base and give me an indented BOM and a flat parts list."
 
 **2D drawings**
@@ -134,3 +143,6 @@ still get every number (bounding box, volume, mass).
 - "Export a 3MF for my slicer."
 - "Open ~/Downloads/part.step and tell me its size and volume, in inches too."
 - "I clicked a face in Kadvia. What is its area?"
+- "Which face is too thin? Highlight it for me."
+- "Show me the underside in perspective, and turn on a section through the bore."
+- "I re-exported the linked STEP file — rebuild the part."
