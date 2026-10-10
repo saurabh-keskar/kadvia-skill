@@ -16,3 +16,7 @@
 
 Why this works: numbers come from tool results (with units), the shape description comes
 from looking at the renders, and the mass formula is shown.
+
+To change the geometry (resize holes, remove fillets, move faces), convert it first:
+`kadvia:convert_to_part {"model_id": "m1"}`, then follow
+[../references/editing-step.md](../references/editing-step.md).

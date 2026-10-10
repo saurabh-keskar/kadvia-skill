@@ -2,7 +2,8 @@
 
 Rules of thumb for making parts that can actually be produced. Use them as defaults when the
 user doesn't specify, and say which ones you assumed. The supplier's or machine's own limits
-always win.
+always win. `kadvia:check_design` checks most of these rules automatically for a chosen
+process; see [design-check.md](design-check.md).
 
 ## Contents
 1. [Metric screws: holes, counterbores, nuts](#1-metric-screws-holes-counterbores-nuts)
@@ -67,9 +68,10 @@ always win.
 - **Tolerances:** ±0.1 mm by default. Ask before specifying anything tighter.
 
 ## 5. Sheet metal
-Kadvia v1 has no bend or flange features. Model sheet-metal parts as a solid with **uniform
-thickness `t`**, for example an extruded path profile, and follow these rules so a fabricator
-can unfold the part.
+Kadvia has no bend, flange or unfold features yet. Model sheet-metal parts as a solid with
+**uniform thickness `t`**, for example an extruded path profile, and follow these rules so a
+fabricator can unfold the part. `kadvia:check_design` with `"process": "sheet_metal"` checks
+uniform thickness, bend radii and hole placement.
 - **Inside bend radius:** at least 1×t for mild steel and 5052 aluminium, at least 1.5–2×t for 6061-T6 and stainless. Outside radius = inside radius + t.
 - **Minimum flange length:** at least 4×t, or 3×t + inside radius.
 - **Holes:** diameter at least t (and at least 1 mm). Hole edge to part edge at least 2×t. Hole edge to bend at least 2.5×t + bend radius.
@@ -79,7 +81,8 @@ can unfold the part.
 ## 6. Injection molding (awareness)
 - Keep walls uniform at 1.5–3 mm (ABS 1.2–3.5 mm). Make ribs 50–60% of the wall thickness.
 - Inside radius should be at least 0.5×t, and outside radius = inside radius + t.
-- Molded parts need draft, typically 1–2°, which Kadvia v1 cannot model. Mention it to the user for molded parts.
+- Molded parts need draft, typically 1–2° (more on textured faces). Model it with `draftAngle` on the extrude or a `draft` feature on the walls (before filleting them), and check it with `kadvia:check_design` (`"process": "injection"`, `build_direction` = the pull direction).
+- Core out thick sections (a `shell`, or pockets from the back) so walls stay uniform.
 
 ## 7. Fillets and chamfers
 
@@ -94,6 +97,7 @@ can unfold the part.
 | Hole entry (for screws and pins) | 0.3–1 mm chamfer |
 
 - The fillet radius must be smaller than the adjacent faces. On a plate of thickness t, a top-edge fillet must be less than t.
+- Box corners can be filleted all at once (`{"all": true}` on a block gives spherical corners). Where convex and concave edges meet (an L-bracket), fillet them in separate features.
 - Prefer profile corner radii (`cornerRadius`) for vertical corners. They are more robust than filleting afterwards.
 
 ## 8. Densities

@@ -1,8 +1,14 @@
 # Image-to-CAD
 
-Rebuilding a part from a photo, sketch, screenshot or drawing. The AI reads the image
-directly; Kadvia needs no special tool. The skill is in **extracting dimensions honestly** and
-making every guess easy to correct.
+Rebuilding a part from a photo, sketch, screenshot or drawing. There are two ways to use the
+image, and they combine well:
+- **Read it:** an AI model that accepts images looks at the picture and estimates dimensions.
+- **Trace over it in Kadvia:** place the image file in the part as a **reference image** (a
+  tracing underlay on a sketch plane), calibrate its scale from one known dimension, then
+  sketch over it and compare the model with the picture in `kadvia:render_views`. This works
+  even for text-only models, because positions come from the calibrated image coordinates.
+
+The skill is in **extracting dimensions honestly** and making every guess easy to correct.
 
 ## Contents
 1. [Workflow](#1-workflow)
@@ -12,15 +18,18 @@ making every guess easy to correct.
 5. [Confirming with the user](#5-confirming-with-the-user)
 6. [Modeling and verifying](#6-modeling-and-verifying)
 7. [Common traps](#7-common-traps)
+8. [Reference images in Kadvia](#8-reference-images-in-kadvia)
+9. [Worked example: tracing a calibrated photo](#9-worked-example-tracing-a-calibrated-photo)
 
 ## 1. Workflow
 - [ ] Classify the image: an orthographic drawing (with or without dimensions), a hand sketch, a photo (straight-on or perspective), or a render or screenshot of another CAD model.
 - [ ] List the features (base shape, holes, slots, bosses, ribs, pockets, fillets, chamfers), the symmetry and the counts.
 - [ ] Choose the construction (sketch → extrude, revolve, primitives) and the orientation in Kadvia.
-- [ ] Find the scale; estimate every key dimension with its basis.
+- [ ] If the user has the image as a file: place it as a reference image on the matching plane (front view → `XZ`, top view → `XY`, side view → `YZ`) and **calibrate** it with one known dimension ([section 8](#8-reference-images-in-kadvia)).
+- [ ] Find the scale; estimate every key dimension with its basis (from the calibrated image coordinates when you traced it).
 - [ ] **Ask the user to confirm** the key dimensions (table below). Don't model guesses silently.
-- [ ] Model with every dimension as a parameter, in small batches.
-- [ ] Render the matching view and compare with the image; check counts and proportions.
+- [ ] Model with every dimension as a parameter, in small batches, sketching on the reference image's plane.
+- [ ] Render the matching view with `include_references: true` and compare with the image; check counts and proportions.
 - [ ] Report the assumptions, and say what is still unverified (hidden faces, depths, tolerances).
 
 ## 2. Reading the image
@@ -98,3 +107,99 @@ Before the first modeling batch, show a compact table and ask one question:
 - Countersunk vs counterbored holes. A cone vs a step changes the screw.
 - Assuming a hole goes through when its far side is hidden.
 - Using an object as the scale when it is closer to the camera than the part, which makes the part look smaller.
+
+## 8. Reference images in Kadvia
+A reference image is a picture placed on a plane of the part. It is stored in the part but
+**never affects geometry** (or mass properties). The user sees it behind the model; you see it
+only in `kadvia:render_views` with `"include_references": true`. Live reference:
+`kadvia:modeling_reference {"topic": "references"}`.
+
+Operations (in `kadvia:apply_operations`):
+
+| `op` | Fields |
+|---|---|
+| `add_reference` | `reference` (below) |
+| `update_reference` | `id`, `patch` (shallow merge; `null` removes a field, so send the whole `placement` object when you change it) |
+| `remove_reference` | `id` |
+
+| Reference field | Meaning |
+|---|---|
+| `id`, `name` | Optional (default `ref1`, `ref2`, …; the name defaults to the file name) |
+| `image` | `{"path": "/abs/photo.jpg"}` (PNG or JPEG) or `{"dataUrl": "data:image/png;base64,..."}` (≤ 2 MB) |
+| `plane` | Any sketch plane: `{"base": "XY" \| "XZ" \| "YZ", "offset"?}`, `{"face": {...}}`, explicit or a reference plane |
+| `placement` | `{"origin"?: [u, v], "width": mm, "rotation"?: deg}`: the image **centre** in plane coordinates, its width in mm, counter-clockwise rotation. Height = width × pixel height / pixel width |
+| `opacity` | 0–1 (default 1); 0.5–0.6 makes tracing easier |
+| `visible` | Default true |
+| `mode` | `"behind"` (default, never hides the model) or `"depth"` |
+| `calibration` | `{"p1": [u, v], "p2": [u, v], "distance": mm}` (two-point scale) |
+
+**Plane:** put a front photo or front drawing view on `XZ` (u = +X, v = +Z), a top-down photo
+on `XY` (u = +X, v = +Y), a side view on `YZ` (u = +Y, v = +Z).
+
+**Pixel → plane coordinates** (rotation 0; pixel (px, py) measured from the top-left of a
+W × H image):
+- `u = origin[0] + (px / W − 0.5) × width`
+- `v = origin[1] + (0.5 − py / H) × width × H / W`
+
+**Two-point calibration:** `p1` and `p2` are the plane coordinates of the two ends of a known
+dimension *as the image is currently placed*, and `distance` is its real length. Kadvia scales
+the image about `p1` so that |p2 − p1| = distance (and stores the scaled `p2`). The user can do
+the same with the two-point tool in the app; if they did, read the result with `kadvia:get_part`
+(`document.references`).
+
+Tips:
+- Always ask for one real dimension. Without it the calibration (and the model) is only proportional.
+- Calibrate on the longest known dimension, measured on a face seen square-on.
+- Perspective photos: calibrate and trace only on the plane of the face nearest square to the camera; elsewhere use the photo for proportions only.
+- `report.references` in the modeling result gives each reference's resolved plane (or an `error`).
+
+## 9. Worked example: tracing a calibrated photo
+**User:** "Model this bracket from my photo ~/Pictures/bracket-front.jpg. The base is 100 mm wide."
+
+The photo is 1600 × 1200 px, taken straight from the front. In the image, the base's bottom
+edge runs from pixel (320, 980) to pixel (1320, 980).
+
+1. `kadvia:new_part {"name": "Bracket from photo"}` → `m1`.
+2. Place the photo on `XZ` with a guessed width of 200 mm (so the image height is 150 mm),
+   centred at [0, 40]:
+
+```json
+{"model_id": "m1", "operations": [
+  {"op": "add_reference", "reference": {"id": "photo", "name": "Front photo",
+    "image": {"path": "/Users/me/Pictures/bracket-front.jpg"},
+    "plane": {"base": "XZ"}, "placement": {"origin": [0, 40], "width": 200}, "opacity": 0.6}}
+]}
+```
+3. The base ends in plane coordinates, with the formulas above:
+   - left: u = 0 + (320/1600 − 0.5)·200 = **−60**, v = 40 + (0.5 − 980/1200)·150 = **−7.5**;
+   - right: u = 0 + (1320/1600 − 0.5)·200 = **65**, v = −7.5.
+
+   They are 125 mm apart, but the real width is 100 mm, so calibrate:
+
+```json
+{"model_id": "m1", "operations": [
+  {"op": "update_reference", "id": "photo",
+    "patch": {"calibration": {"p1": [-60, -7.5], "p2": [65, -7.5], "distance": 100}}}
+]}
+```
+   Kadvia scales the image by 100/125 = 0.8 about p1: the width becomes 160 mm and the
+   origin [−12, 30.5].
+4. Optional: move the image so the base's left end sits on the world origin (shift by
+   +60, +7.5), and restate the calibration at the new position so it stays consistent:
+
+```json
+{"model_id": "m1", "operations": [
+  {"op": "update_reference", "id": "photo",
+    "patch": {"placement": {"origin": [48, 38], "width": 160},
+              "calibration": {"p1": [0, 0], "p2": [100, 0], "distance": 100}}}
+]}
+```
+5. `kadvia:render_views {"views": ["front"], "include_references": true}`: check that the
+   base's left end is at the origin and its right end at X = 100.
+6. Read the other key points the same way (now 1 image px = 160/1600 = 0.1 mm), show the
+   user the dimension table ([section 5](#5-confirming-with-the-user)), and after
+   confirmation sketch on `XZ` with parameters, then extrude (`"direction": "symmetric"` with
+   the depth the user gives, because the photo can't show it).
+7. Compare again with `include_references: true` (and `opacity` 0.4 if the photo hides the
+   model's edges). Adjust parameters until the silhouette matches, and report what is still
+   assumed (depth, hidden features).

@@ -15,8 +15,8 @@
 | `bottom` | +Z | +X | −Y |
 | `iso` | from (+X, −Y, +Z) toward the model | | +Z |
 
-SolidWorks users often think Y-up ("Front plane = XY"). In Kadvia, the floor plane is XY and
-height is Z. Translate when users describe directions in SolidWorks terms.
+Some CAD tools are Y-up (their "front plane" is XY). In Kadvia the floor plane is XY and
+height is Z. Translate when users describe directions in Y-up terms.
 
 ## Sketch planes (modeling)
 | Kadvia plane | Faces the view | u, v | Normal | Offset `o` puts it at |
@@ -25,13 +25,16 @@ height is Z. Translate when users describe directions in SolidWorks terms.
 | `XZ` | `front` | +X, +Z | −Y | Y = −o |
 | `YZ` | `right` | +Y, +Z | +X | X = o |
 
-SolidWorks "Top plane" ≈ Kadvia `XY`, "Front plane" ≈ Kadvia `XZ`, "Right plane" ≈ Kadvia `YZ`
-(with Z up instead of Y up).
+A "top plane" is Kadvia `XY`, a "front plane" is Kadvia `XZ` and a "right plane" is Kadvia `YZ`
+(with Z up).
 
 ## Ids
-- Models: `kadvia:new_part`, `kadvia:open_step_file`, `kadvia:list_models` (never guess).
+- Models: `kadvia:new_part`, `kadvia:new_assembly`, `kadvia:new_drawing`, `kadvia:convert_to_part`, `kadvia:open_step_file`, `kadvia:list_models` (never guess).
+- Model kinds: `part` (`.kadvia`), `imported` (STEP), `assembly` (`.kasm`), `drawing` (`.kdraw`).
 - Features and parameters: the ids/names you chose, listed by `kadvia:get_part`.
-- Bodies: `b0`, `b1`, ... in modeling results and `kadvia:get_part`.
+- Bodies: `b0`, `b1`, ... in modeling results and `kadvia:get_part`; in assemblies `<componentId>/<bodyId>`.
+- Face and edge ids (from `kadvia:get_selection`, `kadvia:recognize_features`, `kadvia:check_design`) belong to the current geometry and change after edits: use them right away (for example in `kadvia:measure`), and use selectors in saved features.
+- Drawing edge ids (`"b0:e12"`) come from `kadvia:get_drawing`.
 
 ## Display modes (`kadvia:set_display_mode`)
 | Mode | Good for |
@@ -45,3 +48,6 @@ SolidWorks "Top plane" ≈ Kadvia `XY`, "Front plane" ≈ Kadvia `XZ`, "Right pl
 - Default 800×600 is enough for shape checks; use 1200–2048 px only for small details.
 - Ask for the views that answer the question (e.g. `top` for hole patterns, `front`/`right` for heights).
 - Renders fit the whole scene. If several models are open, close or mention the others.
+- `section: {"axis": "x" | "y" | "z", "offset"?, "flip"?}` looks inside the part (cut faces are capped); `{"axis": "off"}` renders without the user's section view.
+- `include_references: true` shows reference images (for image-to-CAD tracing); they are hidden by default.
+- `background: "white"` gives drawing-like images.

@@ -38,7 +38,20 @@ not supported yet; a remote connector is planned.
 ## 3. Check it works
 Ask your AI: *"Is Kadvia running?"* — it calls `kadvia_status` and reports the app version.
 Then try: *"Make a 50 mm cube with a 20 mm hole through it in Kadvia."* The part appears in the
-Kadvia window as the AI builds it, and Kadvia shows which assistant made the change.
+Kadvia window as the AI builds it, and Kadvia shows which assistant made the change. Follow up
+with *"Check it for 3D printing"* (design check) or *"Make a drawing of it and export a PDF"*.
+
+## 4. Optional: add the instructions
+The MCP server already sends core instructions. For better results add this repository's
+guidance (design rules, workflows for assemblies, drawings, STEP editing and design checks,
+worked examples):
+- clients with Agent Skills support: copy `skills/kadvia` into the client's skills folder
+  (for example `~/.claude/skills/kadvia`), or upload the zipped folder as a skill;
+- other clients: use `instructions/AGENTS.md` as project rules or a system prompt (see the
+  main [README](../README.md#quick-start) for where each client reads it).
+
+Update to the latest version (v0.3) whenever you update Kadvia; older copies don't describe
+the newer tools.
 
 ## Privacy
 The connection is local to your computer (no network port). Each app launch creates a new

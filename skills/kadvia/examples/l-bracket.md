@@ -106,3 +106,9 @@ the upright.
 (`kadvia:set_parameters`) Check that `changes` shows the size going from 50 × 60 × 40 to
 **50 × 80 × 40**. `hole_spacing` is now 50, so render `top` and confirm the holes are still 15 mm
 from the edges.
+
+## Next steps
+- **Design check:** `kadvia:check_design {"model_id": "m1", "process": "cnc"}` before sending it
+  out (see [../references/design-check.md](../references/design-check.md)).
+- **Drawing:** a dimensioned A4 drawing of this bracket is worked through in
+  [../references/drawings.md](../references/drawings.md#9-worked-example-drawing-of-the-l-bracket).
