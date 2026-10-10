@@ -16,6 +16,10 @@ process; see [design-check.md](design-check.md).
 8. [Densities](#8-densities)
 
 ## 1. Metric screws: holes, counterbores, nuts
+**Model screw holes with the hole wizard** (`kind` + `size`, see [holes-threads.md](holes-threads.md)):
+it uses these standard values, adds the thread, and gives drawings proper callouts. The table is
+for checking results and for things the wizard doesn't make (nuts, washers, bosses).
+
 
 | Size | Pitch | Clearance fine / **medium** / coarse (ISO 273) | Tap drill | Socket head Ø × height (ISO 4762) | Counterbore Ø × depth | Hex nut AF × thickness (ISO 4032) | Washer OD (ISO 7089) |
 |---|---|---|---|---|---|---|---|
@@ -27,9 +31,10 @@ process; see [design-check.md](design-check.md).
 | M10 | 1.5 | 10.5 / **11.0** / 12.0 | 8.5 | 16 × 10 | 17.5 × 10.8 | 16 × 8.4 | 20 |
 | M12 | 1.75 | 13.0 / **13.5** / 14.5 | 10.2 | 18 × 12 | 20 × 13 | 18 × 10.8 | 24 |
 
-- **Clearance holes:** use *medium* by default, *fine* for precise location, and *coarse* for loose assembly or printed parts.
-- **Tapped holes:** model the tap-drill diameter, which is what gets drilled before threading. Thread engagement is at least 1×d in steel, 1.5×d in aluminium and 2×d in plastic. Make blind tapped holes about 0.5×d deeper than the thread.
-- **Counterbores:** `{"counterbore": {"diameter": 11, "depth": 6.5}}` for M6 socket heads. The depth is the head height plus about 0.5 mm.
+- **Clearance holes:** `"kind": "clearance"`; medium (`"fit": "normal"`, the default) for most joints, fine (`"close"`) for precise location, coarse (`"loose"`) for loose assembly or printed parts.
+- **Tapped holes:** `"kind": "tapped"` drills the tap-drill diameter and adds a cosmetic thread. Thread engagement (`threadDepth`) is at least 1×d in steel, 1.5×d in aluminium and 2×d in plastic; without `depth` the drill goes 3 pitches deeper than the thread. Leave material below a blind hole's drill point.
+- **Counterbores:** `"kind": "counterbore", "size": "M6"` gives Ø6.6 with ⌴Ø11 × 6.5 for an ISO 4762 socket head (head height plus about 0.5 mm). Override with `counterbore: {diameter, depth}` only for other screw heads. Countersunk heads: `"kind": "countersink"` (90° metric, 82° inch).
+- **Threaded parts printed in plastic:** model threads (`"thread": "modeled"`) only from about M6 up; for smaller sizes use heat-set inserts or self-tapping pilot holes.
 - **Hex nut trap (pocket):** use a polygon profile with `sides: 6` and `radius: "(nut_af + 0.3)/sqrt(3)"`. The radius is measured centre to vertex, and 0.3 mm is the printing clearance. Pocket depth = nut thickness + 0.2.
 - **Bolt head clearance:** keep washer OD / 2 plus about 1 mm between the bolt centre and any wall, hub or boss.
 
@@ -55,14 +60,14 @@ process; see [design-check.md](design-check.md).
   - Self-tapping M3: pilot hole 2.5 mm in a boss of OD 6–8 mm.
   - Heat-set insert M3: hole about 4.0 mm, but follow the insert's datasheet. Make the hole depth the insert length + 1 mm.
 - **Bosses and ribs:** join them to walls (overlap 0.5–1 mm) with a small fillet. Ribs are 60–80% of wall thickness.
-- **Text and emboss:** at least 0.6 mm stroke and depth.
+- **Text and emboss:** at least 0.6 mm stroke and depth (sketch `text` entities, see [sketch-tools.md](sketch-tools.md#9-worked-example-engrave-text-05-mm-deep)).
 
 ## 4. CNC machining
 - **Minimum wall:** 0.8 mm in metals (1.0 mm or more preferred) and 1.5 mm in plastics.
 - **Internal vertical corners:** they always have a radius. Make it at least the cutter radius: 1 mm minimum, 3 mm typical (Ø6 cutter), and about ⅓ of the pocket depth or more. Model it explicitly with a `rect` `cornerRadius` or a fillet on `{"parallel": "Z"}` pocket edges.
 - **Pocket depth:** at most 4× the pocket width (6× is possible but costly).
 - **Hole depth:** at most 4×d typical, up to 10×d drilled. Use standard drill diameters.
-- **Threads:** depth 1.5×d. Avoid threads smaller than M3 in aluminium.
+- **Threads:** depth 1.5×d; keep them cosmetic (the shop taps them). Avoid threads smaller than M3 in aluminium.
 - **External edges:** break them with a 0.2–0.5 mm chamfer. Sharp outside corners are fine.
 - **Access:** keep features reachable from as few sides as possible (ideally top and bottom). Avoid undercuts.
 - **Tolerances:** ±0.1 mm by default. Ask before specifying anything tighter. Put the tight ones on the drawing (ISO fits such as H7 for bearing seats and dowel holes, GD&T for datum-related features; see [drawings.md](drawings.md#8-tolerances-and-fits)).
@@ -101,7 +106,9 @@ uniform thickness, bend radii and hole placement.
 - Prefer profile corner radii (`cornerRadius`) for vertical corners. They are more robust than filleting afterwards.
 
 ## 8. Densities
-For `kadvia:mass_properties` `density_g_cm3`:
+Prefer `kadvia:set_material` with a library material (see
+[materials-appearance.md](materials-appearance.md#2-material-library)): mass, BOMs and drawings
+then use it automatically. For a quick what-if, pass `density_g_cm3` to `kadvia:mass_properties`:
 
 | Material | g/cm³ |
 |---|---|

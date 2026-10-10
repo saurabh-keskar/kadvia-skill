@@ -41,7 +41,7 @@ A "top plane" is Kadvia `XY`, a "front plane" is Kadvia `XZ` and a "right plane"
 | Mode | Good for |
 |---|---|
 | `shaded-edges` | Default; reading shape and features |
-| `shaded` | Smooth surfaces, appearance |
+| `shaded` | Smooth surfaces, colours and finishes set with `kadvia:set_appearance` |
 | `wireframe` | Seeing internal edges and hidden features |
 | `hidden-lines` | Drawing-like line views |
 
@@ -51,4 +51,5 @@ A "top plane" is Kadvia `XY`, a "front plane" is Kadvia `XZ` and a "right plane"
 - Renders fit the whole scene. If several models are open, close or mention the others.
 - `section: {"axis": "x" | "y" | "z", "offset"?, "flip"?}` looks inside the part (cut faces are capped); `{"axis": "off"}` renders without the user's section view.
 - `include_references: true` shows reference images (for image-to-CAD tracing); they are hidden by default.
-- `background: "white"` gives drawing-like images.
+- `background: "white"` gives drawing-like images; `"transparent"` a PNG with alpha.
+- `quality: "render"` gives a beauty render (materials and appearances, environment lighting, soft shadow, no edges) for product shots, with `environment` `studio` (default), `outdoor` or `warehouse`; keep the default `standard` quality for checking geometry. See [materials-appearance.md](materials-appearance.md#7-product-renders).

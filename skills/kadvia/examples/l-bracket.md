@@ -85,6 +85,11 @@ upright holes are drilled from its inner face (YZ at X = t) toward −X:
 
 Check: the volume drops by 4·π·2.75²·5 ≈ 475 mm³ to **≈ 24 059 mm³**.
 
+Hole-wizard alternative (same Ø5.5 result, plus a proper hole callout on drawings): replace
+`"diameter": "hole_d"` with `"kind": "clearance", "size": "M5"` in both holes; switching to M6
+later is `update_feature {"id": "base_holes", "patch": {"size": "M6"}}` (and the same for
+`upright_holes`). See [holes-threads.md](../references/holes-threads.md).
+
 7. `kadvia:render_views {"views": ["iso", "front", "top", "left"]}`. Check that `front` shows the
 L-profile with both radii, `top` shows 2 holes in the base leg, and `left` shows 2 holes in
 the upright.

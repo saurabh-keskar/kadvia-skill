@@ -10,7 +10,7 @@ Everything `kadvia:apply_operations` accepts. The same content is available live
 3. [Expressions](#3-expressions)
 4. [Sketch planes and frames](#4-sketch-planes-and-frames)
 5. [Profiles](#5-profiles)
-6. [Features](#6-features): extrude, revolve, box, cylinder, sphere, hole, fillet, chamfer, linear_pattern, circular_pattern, mirror, plane, loft, sweep, shell, draft
+6. [Features](#6-features): extrude, revolve, box, cylinder, sphere, hole, thread, fillet, chamfer, linear_pattern, circular_pattern, mirror, plane, loft, sweep, shell, draft
 7. [Edge selectors](#7-edge-selectors)
 8. [Bodies and booleans](#8-bodies-and-booleans)
 9. [Gotchas](#9-gotchas)
@@ -21,7 +21,10 @@ Everything `kadvia:apply_operations` accepts. The same content is available live
 
 Related: reference images (`add_reference` …) in [image-to-cad.md](image-to-cad.md#8-reference-images-in-kadvia);
 direct edits on imported geometry (`delete_face`, `offset_face`, `move_face`, `resize_hole`,
-`import`) in [editing-step.md](editing-step.md).
+`import`) in [editing-step.md](editing-step.md); standard holes and the `thread` feature in
+[holes-threads.md](holes-threads.md); splines, ellipses, slots, text, `edit_sketch` and DXF
+import in [sketch-tools.md](sketch-tools.md); `set_material` / `set_appearance` in
+[materials-appearance.md](materials-appearance.md).
 
 ## 1. Document model
 A part is `{schema: "kadvia.part/1", name, units: "mm", parameters: [...], features: [...]}`.
@@ -56,6 +59,8 @@ Kadvia replays the features in order (regeneration) every time something changes
 | `rename_part` | `name` | |
 | `set_rollback` | `to?` | Rollback bar: only features up to `to` regenerate (`"@start"` = none). Omit `to` to roll forward to the end. See [section 11](#11-rollback-bar) |
 | `add_reference` / `update_reference` / `remove_reference` | `reference` / `id`, `patch` / `id` | Reference images for tracing (never affect geometry) |
+| `edit_sketch` | `id`, `edits` | Sketch edits (trim, offset, fillet, mirror, patterns, …) on a stored sketch; see [sketch-tools.md](sketch-tools.md#5-editing-sketches-edit_sketch) |
+| `set_material` / `set_appearance` | `material`, `body?` / `appearance`, `body?`, `faces?`, `replace?`, `clearFaces?` | Material (mass) and look (display only); see [materials-appearance.md](materials-appearance.md#8-operations-inside-apply_operations) |
 
 - The batch is **one transaction**: everything applies, the part regenerates once, and the change is one undo step.
 - Any invalid op or failing feature means **nothing changes**. The error names `operations[i]` and the feature id.
@@ -205,6 +210,18 @@ Profiles are closed shapes. A profile completely inside another profile of the s
   - `YZ` drills toward −X.
 - Put the plane **on the entry face**.
 - Give `depth` or `through: true`. `counterbore` is optional. A hole always cuts its `target`.
+- **For screws use the hole wizard** instead of typed diameters: `"kind": "tapped"`, `"clearance"`, `"counterbore"`, `"countersink"` or `"counterdrill"` with `"size": "M6"` (or `"1/4-20 UNC"`); `diameter` then comes from the tables. Fields, tables and examples: [holes-threads.md](holes-threads.md).
+
+```json
+{"id": "m5_holes", "type": "hole", "plane": {"face": {"normal": "+Z", "plane": "max_z"}},
+ "points": [[-20, -10], [20, -10]], "kind": "tapped", "size": "M5", "threadDepth": 10}
+```
+
+### thread
+```json
+{"id": "shaft_thread", "type": "thread", "faces": {"surface": "cylinder", "concave": false, "diameter": 10}, "length": 20}
+```
+- A cosmetic (default) or modeled (`"modeled": true`) thread on the cylindrical faces of one hole or shaft; see [holes-threads.md](holes-threads.md#5-thread-feature).
 
 ### fillet / chamfer
 ```json
@@ -370,7 +387,10 @@ circle), `constraints` (coincident, horizontal, vertical, parallel, perpendicula
 equal, midpoint, concentric, fix, symmetric, point_on_line, point_on_circle) and driving
 `dimensions` (distance, horizontal_distance, vertical_distance, length, radius, diameter,
 angle) whose `value` can be a parameter expression. You can write them too, but `profiles`
-remain the simpler path for standard shapes.
+remain the simpler path for standard shapes. Sketches also take `spline`, `ellipse`,
+`elliptical_arc`, `slot`, `arc_slot`, `text` and `conic` entities, construction geometry, more
+relations (`curvature`, …) and dimensions (`major_radius`, `minor_radius`, `width`), and can be
+edited with `edit_sketch`: see [sketch-tools.md](sketch-tools.md).
 - The result lists each sketch under `sketches` with `status` (`fully_constrained`, `under_constrained`, `over_constrained`, `failed`), `dof`, redundant and conflicting constraint ids.
 - `kadvia:solve_sketch {"model_id": "...", "sketch": {...}}` solves a sketch against the part's parameters **without** changing the part: use it to debug before `add_feature`.
 - Read `kadvia:modeling_reference {"topic": "constraints"}` for the exact fields before editing one.
@@ -384,5 +404,6 @@ What the current version does not do (say so instead of improvising):
 - **Draft:** planar faces only, not perpendicular to the pull direction.
 - **Loft:** one region per section. **Sweep:** tangent junctions (or line→line mitres); a helix profile must fit within one pitch and not reach the axis.
 - **Sheet metal:** no bend/flange/unfold features; model a uniform-thickness solid (see [design-rules.md](design-rules.md)).
-- **Threads:** not modeled; use tap-drill holes and mention the thread in a drawing note.
+- **Threads:** cosmetic by default; modeled threads are slow and may fail where they cross other features. No pipe, tapered or multi-start threads (see [holes-threads.md](holes-threads.md#10-limits)).
+- **Sketch curves:** splines, ellipses and conics become fine arcs in solids and STEP (see [sketch-tools.md](sketch-tools.md#12-limits)).
 - **Imported STEP:** see [editing-step.md](editing-step.md#8-honest-limits); assemblies, drawings and the design check have their own limits in [assemblies.md](assemblies.md), [drawings.md](drawings.md) and [design-check.md](design-check.md).

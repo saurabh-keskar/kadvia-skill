@@ -68,6 +68,8 @@ Check: there is 1 body with bbox size **[140, 140, 34]** centred on X/Y. The vol
 
 Check: each hole removes π·5.5²·14 ≈ 1 330 mm³, so 6 holes bring the volume to
 **≈ 217 741 mm³**. Render `top` and count **6** evenly spaced holes clear of the hub.
+(With the hole wizard, `"kind": "clearance", "size": "M10"` instead of `"diameter": "bolt_d"`
+gives the same Ø11 and repeats in the circular pattern with its callout data.)
 
 5. Edge breaks:
 

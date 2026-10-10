@@ -126,8 +126,9 @@ and its holes as `{center, diameter, thru, depth, edge}`.
 **Auto dimension** (on `kadvia:new_drawing`, or the `auto_dimension` op) adds per orthographic
 view (not exploded views), skipping what another view already shows: overall width and height,
 one diameter per hole size with count and THRU/DEPTH (`"2X Ø6.6 THRU"`), hole positions from
-the left/bottom outline, and one radius per arc size (`"2X R3"`). Assembly drawings get overall
-sizes only.
+the left/bottom outline, and one radius per arc size (`"2X R3"`). Holes made with the hole
+wizard get one standard **hole callout** per hole feature and view instead of diameter dimensions
+(see [section 10](#10-notes-callouts-title-block)). Assembly drawings get overall sizes only.
 
 ## 8. Tolerances and fits
 Add `tolerance` to any dimension (in `add_dimension`, or later with
@@ -176,6 +177,9 @@ in a frame joined to a filled triangle on the edge.
 ## 10. Notes, callouts, title block
 - Note: `{"type": "note", "text": "BREAK SHARP EDGES\nDEBURR", "position": [x, y], "height"?: h, "sheet"?}` (sheet mm).
 - Hole callout: `{"type": "hole_callout", "view": "v1", "refs": ["<circle edge id>"], "position"?, "text"?}` → "2X Ø6.6 THRU".
+  - On any circle of a **wizard hole** (drill, counterbore, countersink or counterdrill circle) it shows the standard callout, one line per element, with the count of equal holes of that feature in the view: `4X Ø6.6 THRU` / `⌴Ø11 ↧6.5`; `Ø4.2 ↧12.5` / `M5x0.8 - 6H ↧10`; `M8x1.25 - 6H THRU`; `Ø5.5 THRU` / `⌵Ø11.2 X 90°`. The ↧, ⌴ and ⌵ symbols are drawn as geometry.
+  - `text` overrides work as for dimensions: `"<>"` = the automatic lines, `"\n"` separates lines.
+- Cosmetic threads are drawn as thin thread lines (ISO 6410-1): across the axis at the root diameter (internal threads hidden-dashed, or thin solid where a section cuts them) with a thread-limit line; in end views a thin ¾ circle. See [holes-threads.md](holes-threads.md#6-reading-holes-back-resizing-drawings).
 - Centre mark `{"type": "center_mark", "view", "refs": [circle]}` and centreline `{"type": "centerline", "view", "refs": [a, b]}`. Holes get both automatically.
 - Title block fields (`title_block` on `kadvia:new_drawing`, or `update_title_block`): `title`, `partNumber`, `material`, `author`, `date`, `revision`, `company`, `checked`, `tolerance` (for example `"ISO 2768-m"`). The title defaults to the source's name, the date to today, the revision to "A".
 - Automatic positions of symbols, balloons and frames avoid the views, dimension texts, the frame, the title block, BOM tables and each other.
@@ -184,7 +188,7 @@ in a frame joined to a filled triangle on the edge.
 Assembly drawings only.
 - **BOM table:** `{"type": "bom_table", "position"?: [x, y], "structure"?: "top" | "indented" | "flat", "columns"?: [...], "density"?, "sheet"?}`.
   - `position` = the top-right corner in sheet mm (default just above the title block).
-  - `columns` from `item`, `name`, `quantity`, `file`, `volume`, `mass` (default item, name, quantity); `mass` needs `density` (g/cm³).
+  - `columns` from `item`, `name`, `quantity`, `file`, `volume`, `mass`, `material` (default item, name, quantity). `mass` uses the parts' materials (set with `kadvia:set_material`) unless `density` (g/cm³) is given; `material` shows the material names.
   - `structure`: `top` (sub-assemblies as one row), `indented` (their contents under their row, numbered 3.1, 3.2) or `flat` (parts only, quantities summed over every level).
 - **Balloon:** `{"type": "balloon", "view", "refs": ["bolt/b0:e4.mid"], "position"?, "text"?}`: a circled item number with a leader ending in a dot on that component. The number comes from the BOM (the structure of the first BOM table), so it never drifts from the table.
 - **Auto balloon:** `{"op": "auto_balloon", "view"?, "replace"?}` adds one balloon per BOM item on its longest visible straight edge, spread on a ring around the view (default the iso view); items already ballooned in that view are skipped.
@@ -365,4 +369,5 @@ appears without a balloon.
 - Assembly drawings get overall sizes only from auto dimension; add the rest by hand. Exploded views are not auto-dimensioned.
 - Fits cover the ISO 286 letters and grades listed in [section 8](#8-tolerances-and-fits) up to 500 mm; a feature control frame takes at most 3 datums.
 - DXF R12 writes dimensions and symbols as plain lines and text (no associative dimensions), one file per sheet.
+- Wizard hole callouts and thread lines appear on part drawings only, not on assembly or STEP drawings.
 - Drawings that use the newer features (several sheets, assembly or STEP sources, tolerances, GD&T, balloons) cannot be opened by older Kadvia versions; tell the user if they share `.kdraw` files with someone on an older version (PDF/DXF are always fine).

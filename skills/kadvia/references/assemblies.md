@@ -28,7 +28,8 @@ indented or flat) and checks for interference. The live reference is
 | `kadvia:new_assembly` | Create an empty assembly (kind `assembly`) in the user's window |
 | `kadvia:get_assembly` | Read components, mates and the solve status (call it before editing an assembly you did not just build) |
 | `kadvia:apply_assembly_operations` | Add/update/remove components and mates as **one transaction** (one solve, one undo step); `dry_run: true` checks without committing |
-| `kadvia:assembly_bom` | Bill of materials: components grouped by source with quantities (and masses with `density_g_cm3`); `structure`: `top` (default), `indented` or `flat` |
+| `kadvia:assembly_bom` | Bill of materials: components grouped by source with quantities, material and mass (from the parts' materials, or `density_g_cm3`); `structure`: `top` (default), `indented` or `flat` |
+| `kadvia:set_material` with `component_id` | Override the material of one component (for example the same part in steel and in brass); `null` removes the override |
 | `kadvia:check_interference` | Overlapping solids between components, part by part inside sub-assemblies (approximate volume and depth) |
 | `kadvia:new_drawing` with the assembly as `source` | An assembly drawing with a BOM table and balloons (see [drawings.md](drawings.md)) |
 | `kadvia:undo` / `kadvia:redo`, `kadvia:save_part` (writes `.kasm`), `kadvia:export_model`, `kadvia:mass_properties`, `kadvia:measure`, `kadvia:render_views` | Work on assemblies too |
@@ -126,7 +127,7 @@ Rules:
 | Geometry kinds unexpected (`point` instead of `axis`) | The selector picked a different face than intended | Use a filter (`surface: "cylinder"`, `normal`) or a better `near` point |
 
 ## 6. BOM, interference, exploded view, export
-- `kadvia:assembly_bom {"model_id": "m4", "density_g_cm3": 2.70}` → items with `item`, `number`, `name`, `source` (`path`, `part`, `step` or `assembly`), `quantity`, component ids, volume per unit (mm³) and, with a density, mass per unit and `totalMass` (g). Suppressed or failed components are listed as excluded. Different materials: call it once per density, or compute per item.
+- `kadvia:assembly_bom {"model_id": "m4"}` → items with `item`, `number`, `name`, `source` (`path`, `part`, `step` or `assembly`), `quantity`, component ids, volume per unit (mm³) and mass per unit and `material` from the parts' materials (or from `density_g_cm3`, which overrides them), with `totalMass` (g) when every row has a mass. Suppressed or failed components are listed as excluded. Components with different material overrides form separate rows. Set materials on the parts (`kadvia:set_material`) so the BOM needs no density argument.
 - `structure` (assemblies with sub-assemblies): `"top"` (default; a sub-assembly is one row), `"indented"` (its contents listed under its row as 3.1, 3.2, with `level`; nested quantities are per parent unit) or `"flat"` (parts only, quantities summed over every level: what to order).
 - `kadvia:check_interference {"model_id": "m4"}` (optional `components: ["bolt"]`) → overlapping pairs with approximate shared `volume` (mm³), deepest overlap `depth` (mm) and the overlap box. Touching faces are not interference. A pin exactly the size of its hole can show a sliver about the tessellation tolerance deep (~0.05 mm); ignore those.
 - `{"op": "set_exploded_view", "scale": 1.5}` spreads the components apart in the user's view (display only: positions and mates don't change). `{"scale": 0}` or `null` turns it off.
@@ -337,3 +338,4 @@ drawing. See [drawings.md](drawings.md#15-worked-example-assembly-drawing-with-b
 - Cam followers follow the cam face's triangulation, within its tolerance.
 - `kadvia:check_design` does not run on assemblies: check the component parts, and use `kadvia:check_interference` for the assembly.
 - Interference is computed on the display meshes, so volumes and depths are approximate.
+- Material overrides apply to a whole component; overrides on components inside a rigid sub-assembly are not applied when it is placed. STEP components have no material (no mass in the BOM unless `density_g_cm3` is given).

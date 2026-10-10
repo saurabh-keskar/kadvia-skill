@@ -6,7 +6,7 @@
 | `ui_unavailable` | App is starting or the window is not ready | Wait a few seconds and retry once |
 | `not_found` | File path or model id does not exist | Use an absolute path; call `kadvia:list_models` for ids |
 | `bad_request` | Invalid argument (view name, size, relative path) | Fix the argument as the hint says |
-| `unsupported` | File type not supported, or the tool doesn't apply to this kind of model | Kadvia opens `.step`/`.stp`, `.kadvia`, `.kasm` and `.kdraw`. Modeling tools need kind `part`: convert STEP geometry with `kadvia:convert_to_part`. `kadvia:check_design` doesn't run on assemblies |
+| `unsupported` | File type not supported, or the tool doesn't apply to this kind of model | Kadvia opens `.step`/`.stp`, `.kadvia`, `.kasm` and `.kdraw`; DXF files go through `kadvia:import_dxf`. Modeling tools need kind `part`: convert STEP geometry with `kadvia:convert_to_part`. `kadvia:check_design` doesn't run on assemblies |
 | `parse` | The file is not valid STEP or `.kadvia` | Ask the user for a re-export from their CAD tool (AP214 or AP242) |
 | `geometry` | No displayable bodies, or import failed | Render, report what is visible, suggest re-export |
 | `panic` | The kernel hit geometry it cannot handle | The app is fine; report the file name to the user |
@@ -34,6 +34,39 @@ that operation and resend the **whole corrected batch**.
 | Timeout during modeling | Heavy regeneration (many fillets/patterns) | `kadvia:get_part` to see whether the revision changed before retrying; split the batch |
 | `undo` says nothing to undo | No committed change since the part was opened | Fine; nothing to revert |
 | Features show `skipped` / "rolled back" | The rollback bar is above them | `{"op": "set_rollback"}` rolls forward to the end |
+
+## Holes and threads
+| Error / symptom | Likely cause | Fix |
+|---|---|---|
+| `bad_request` unknown size / invalid pitch | A size outside the tables (`"M7"`, `"M8x0.9"`) | Use a size the message lists; fine pitches as `"M8x1"`; inch as `"1/4-20 UNC"` |
+| `bad_request` no table value for the counterbore/countersink | The entry feature has no table entry for that size (for example a counterbore for M18) | Give `counterbore: {"diameter": ..., "depth": ...}` (or `countersink: {...}`) explicitly |
+| A blind hole breaks through the bottom | Drill depth (thread + 3 pitches, plus the 118° point) exceeds the thickness | Smaller `threadDepth`, explicit `depth`, `drillPoint: 0`, or make it `through: true` |
+| A note says the drill point was left flat | The point would barely break through a face | Fine, or change the depth |
+| Modeled thread fails | Very fine pitch for the part, crosses another feature, or a chamfered entry | Use a cosmetic thread (default) |
+| `thread` feature refused | The face is not one cylinder, or its diameter doesn't fit any standard thread | Select one hole wall or shaft; give `size`; internal threads need a tap-drill-sized hole |
+| A face plane `{"normal": "+Z"}` is refused (several faces) | Counterbore floors and steps also face up; a face plane needs exactly one face | Add `"plane": "max_z"` or a `near` point |
+
+## Materials and renders
+| Error / symptom | Likely cause | Fix |
+|---|---|---|
+| `bad_request` unknown material | Name not in the library | `kadvia:list_materials {"query": ...}`, or a custom `{"name", "density"}` |
+| `bad_request` on `set_appearance` | Invalid colour, a value outside 0–1, opacity 0, `faces` without `body_id`, or a face selector that matches nothing | Fix the field as the message says |
+| `mass_properties` has no mass, lists `unassigned` | Some bodies have no material | `kadvia:set_material` (part or body), or pass `density_g_cm3` |
+| Render looks plain grey | No material or appearance set | Set a material and/or appearance first |
+| `environment` refused | It only applies to beauty renders | Add `"quality": "render"` |
+| Other parts appear in the product shot | Renders show every open model | Close them (with the user's OK) or mention them |
+| Face colour disappeared after an edit | A face style used `ids`, which changed | Use `normal` / `plane` / `surface` selectors |
+
+## Sketches and DXF
+| Error / symptom | Likely cause | Fix |
+|---|---|---|
+| `edit_sketch` trim/split refused on a slot or text | Slots, arc slots and text must be exploded first | `{"edit": "explode", "entity": ...}`, then trim |
+| `edit_sketch` result has `notes` | Relations that no longer held were removed | Expected; re-add the dimensions the user needs |
+| Imported DXF gives 0 regions / extrude fails | Gaps between end points larger than the tolerance, or open construction lines | Re-import with a larger `tolerance` (e.g. 0.05) or only the outline `layers` |
+| Imported part 25.4× too big or small | The file has no or wrong units | Re-import with `"units": "in"` or `"mm"` (check `kadvia:inspect_dxf`) |
+| Labels or title block became profiles | TEXT/MTEXT and border layers were imported | `"text": false`, or pick the outline `layers` |
+| Many entities `skipped` | HATCH, DIMENSION, LEADER, 3D entities are not imported | Fine for outlines; tell the user what was left out |
+| Text characters missing | No glyph in the bundled fonts | Use plain Latin characters |
 
 ## Imported STEP edits
 | Error / symptom | Likely cause | Fix |

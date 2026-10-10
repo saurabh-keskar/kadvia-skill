@@ -84,9 +84,11 @@ Filters combine with AND; `near` and `ids` pick among the filtered faces.
 
 ## 5. Regular features on imported faces
 After conversion every modeling feature works on the imported solid:
-- **New holes** on a face: `{"type": "hole", "plane": {"face": {"normal": "+Z", "plane": "max_z"}}, "points": [[10, 10]], "diameter": 4.2, "depth": 8}`. A face plane's origin is the world origin projected onto the face, with u = world +X (world +Y if the face normal is close to ±X), so `points` are close to world X/Y on a top face.
+- **New holes** on a face, preferably wizard holes: `{"type": "hole", "plane": {"face": {"normal": "+Z", "plane": "max_z"}}, "points": [[10, 10]], "kind": "tapped", "size": "M5", "threadDepth": 8}` (see [holes-threads.md](holes-threads.md)). A face plane's origin is the world origin projected onto the face, with u = world +X (world +Y if the face normal is close to ±X), so `points` are close to world X/Y on a top face.
 - **Pockets and bosses**: a sketch with `plane: {"face": ...}`, then an extrude with `"operation": "cut"` or `"add"`.
 - **Fillets and chamfers** with edge selectors, `shell`, patterns of your new features.
+- **Threads** on existing holes or shafts: a `thread` feature on their cylindrical face (for example after resizing a hole to a tap drill).
+- **Material and look:** imported geometry has no material; `kadvia:set_material` gives it mass, `kadvia:set_appearance` a colour.
 
 ## 6. Worked example: make all Ø6 holes Ø6.6 and remove the fillets
 **User:** "Here's ~/Downloads/mount.step. Make all the Ø6 holes Ø6.6 for M6 clearance and
