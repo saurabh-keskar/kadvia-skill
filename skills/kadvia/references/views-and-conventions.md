@@ -26,7 +26,7 @@ height is Z. Translate when users describe directions in Y-up terms.
 {"views": ["iso", {"from": [0, 0, -1], "name": "under"}, {"from": [1, -1, -1], "name": "iso_below"}], "projection": "persp"}
 ```
 - **Projection:** `"ortho"` (true proportions, no distortion; the usual default) or `"persp"` (natural look). In `kadvia:render_views` it applies to those images only; in `kadvia:set_view` it changes the user's viewport until changed.
-- **The user's camera** (`kadvia:set_view`): give `view` **or** `from` (not both), plus optional `fit` (default true), `projection` and `section`. At least one of `view`, `from`, `projection`, `section` is required:
+- **The user's camera** (`kadvia:set_view`): give `view` **or** `from` (not both), plus optional `fit` (default true), `projection`, `section` and `model_id` (zoom to that model's bounding box instead of everything; `model_id` alone just fits that model). At least one of `view`, `from`, `projection`, `section`, `model_id` is required:
 
 ```json
 {"from": [0, -1, 0.3], "projection": "persp", "section": {"axis": "x", "offset": 25}}
@@ -65,7 +65,9 @@ A "top plane" is Kadvia `XY`, a "front plane" is Kadvia `XZ` and a "right plane"
 ## Screenshot tips (`kadvia:render_views`)
 - Default 800×600 is enough for shape checks; use 1200–2048 px only for small details.
 - Ask for the views that answer the question (e.g. `top` for hole patterns, `front`/`right` for heights).
-- Renders fit the whole scene. If several models are open, close or mention the others.
+- A render shows **one model**: `model_id`, default the active one (the model the user is working on). The user's other open models stay out of the images, so never close them to get a clean picture; the views are fitted to the bodies shown.
+- `isolate: {"bodies": ["b0", "b2"]}` shows only those bodies of the model, `hide: ["b1"]` leaves bodies out (a cover or lid, to look inside). Both apply to these images only: the user's visibility and selection are untouched (bodies the user hid stay hidden unless isolated). Body ids come from `kadvia:get_model_info`; an unknown model or body id is `not_found`, nothing left to render is `bad_request`.
+- `scene: true` renders every open model together (not with `model_id`, `isolate` or `hide`), for example to show how two open parts compare in size.
 - `section: {"axis": "x" | "y" | "z", "offset"?, "flip"?}` looks inside the part (cut faces are capped); `{"axis": "off"}` renders without the user's section view.
 - Hidden side or a specific face: a custom direction (`{"from": [0, 0, -1]}` for the underside, a face normal for that face) instead of guessing from the standard views.
 - `include_references: true` shows reference images (for image-to-CAD tracing); they are hidden by default.

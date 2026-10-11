@@ -68,7 +68,10 @@ background). The supplier's own limits always win.
 - `issues[]`: `{id, severity, rule, message, suggestion, location: {bodyId, point, faceId?, edgeId?, faceIds?}, value, limit}`, errors first, then warnings, then infos.
   - `value` vs `limit` is the measured number against the rule (mm, degrees or a ratio of the hole diameter / pocket width).
   - `location.point` is a 3D point on the problem; it works directly in `near` selectors.
-- `holes[]`: every detected hole (diameter, depth, through, axis, centre, matching standard size).
+- `holes[]`: every detected hole `{bodyId, faceIds, diameter, depth, through, axis, center, feature?, standard?, standardCandidates?}`.
+  - A hole cut by a hole-wizard feature carries that feature's id in `feature` and takes `through` and `standard` from it (`"M4 tap drill"`, `"M5 clearance (medium)"`, `"M6 counterbore"`), so the check agrees with `kadvia:recognize_features` and the drawing callouts.
+  - Otherwise `through` is geometric (a floor face or drill-point cone inside the cylinder closes it) and `standard` is the ISO table entry the diameter matches, read in context: a counterbore reading needs a smaller coaxial hole below it (Ø5.5 alone is the M5 clearance, Ø11 over Ø6.6 the M6 counterbore).
+  - A diameter that stays ambiguous is reported as `"Ø5.5 (M5 clearance (medium) or M2.5 counterbore)"` with the options in `standardCandidates`, never as a guessed kind: tell the user the options instead of picking one. The `hole_standard_size` info is raised only for diameters that match nothing.
 - `stats`: minimum wall (and where), overhang area, overall size; `limits`: the effective limits used.
 - `exact`: true for parts (exact geometry); false for imported models (fitted from the mesh, so treat values as approximate).
 
@@ -139,6 +142,6 @@ chamfers or try `"build_direction": "-Z"` (upside down) and compare the overhang
 
 ## 7. Limits
 - Assemblies are not checked; check each part, and use `kadvia:check_interference` for the assembly.
-- Imported models are checked on their mesh (`exact: false`): values are approximate. Convert them with `kadvia:convert_to_part` for exact results.
+- Imported models are checked on their mesh (`exact: false`): values are approximate. Convert them with `kadvia:convert_to_part` for exact results (mesh-only bodies of a converted part stay approximate).
 - Wall thickness is sampled over the surface: confirm critical walls with `kadvia:measure` (two faces give their exact distance).
 - The check knows geometry, not material or tolerances: say what you assumed (cutter size, nozzle, machine).

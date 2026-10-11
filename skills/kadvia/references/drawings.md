@@ -182,7 +182,7 @@ in a frame joined to a filled triangle on the edge.
 - Cosmetic threads are drawn as thin thread lines (ISO 6410-1): across the axis at the root diameter (internal threads hidden-dashed, or thin solid where a section cuts them) with a thread-limit line; in end views a thin ¾ circle. See [holes-threads.md](holes-threads.md#6-reading-holes-back-resizing-drawings).
 - Centre mark `{"type": "center_mark", "view", "refs": [circle]}` and centreline `{"type": "centerline", "view", "refs": [a, b]}`. Holes get both automatically.
 - Title block fields (`title_block` on `kadvia:new_drawing`, or `update_title_block`): `title`, `partNumber`, `material`, `author`, `date`, `revision`, `company`, `checked`, `tolerance` (for example `"ISO 2768-m"`). The title defaults to the source's name, the date to today, the revision to "A".
-- Automatic positions of symbols, balloons and frames avoid the views, dimension texts, the frame, the title block, BOM tables and each other.
+- Automatic positions of symbols, balloons and frames avoid the views, view captions, dimension texts, the frame, the title block, BOM tables, hand-placed balloons and each other.
 
 ## 11. BOM tables, balloons, exploded views
 Assembly drawings only.
@@ -191,7 +191,7 @@ Assembly drawings only.
   - `columns` from `item`, `name`, `quantity`, `file`, `volume`, `mass`, `material` (default item, name, quantity). `mass` uses the parts' materials (set with `kadvia:set_material`) unless `density` (g/cm³) is given; `material` shows the material names.
   - `structure`: `top` (sub-assemblies as one row), `indented` (their contents under their row, numbered 3.1, 3.2) or `flat` (parts only, quantities summed over every level).
 - **Balloon:** `{"type": "balloon", "view", "refs": ["bolt/b0:e4.mid"], "position"?, "text"?}`: a circled item number with a leader ending in a dot on that component. The number comes from the BOM (the structure of the first BOM table), so it never drifts from the table.
-- **Auto balloon:** `{"op": "auto_balloon", "view"?, "replace"?}` adds one balloon per BOM item on its longest visible straight edge, spread on a ring around the view (default the iso view); items already ballooned in that view are skipped.
+- **Auto balloon:** `{"op": "auto_balloon", "view"?, "replace"?, "spacing"?, "side"?}` adds one balloon per BOM item on its longest visible straight edge (default view: the iso view); items already ballooned in that view are skipped, `replace: true` redoes them. Placement: balloons start on a ring around the view in BOM order and are slid along it until no two circles are closer than `spacing` mm (default 2, allowed 0–100); balloons that would cover another view, a caption, a dimension text, the BOM table, the title block, the frame or a hand-placed balloon move to the nearest clear spot, and crossing leaders are uncrossed. `side` puts them all on one side of the view: `"around"` (default), `"left"`, `"right"`, `"top"` or `"bottom"`. The positions found are stored on the annotations (view coordinates), so the user can drag them afterwards. A `balloon` added without `position` is placed the same way.
 - **Exploded view:** a standard view with `explode`, e.g. `{"orientation": "iso", "explode": 1.5}`, moves every component away from the assembly centre by 1.5 × (its centre − the assembly centre). The caption reads "EXPLODED VIEW"; detail and section views of it are exploded too; auto dimension skips it. (This is independent of the 3D `set_exploded_view`.)
 - `kadvia:get_drawing` returns the drawing's `bom`: `{item, name, quantity, components}` per top-level row. It follows the assembly when components are added or removed.
 
@@ -204,7 +204,7 @@ Assembly drawings only.
 | `add_dimension` / `update_dimension` / `remove_dimension` | `dimension` / `id, patch` / `id` (removing also removes frames attached to it) |
 | `add_dimension_set` | `view, type, axis, origin, refs, position?, decimals?` |
 | `add_annotation` / `update_annotation` / `remove_annotation` | `annotation` / `id, patch` / `id` |
-| `auto_balloon` | `view?`, `replace?` |
+| `auto_balloon` | `view?`, `replace?`, `spacing?` (mm, default 2), `side?` (`around` default, `left`, `right`, `top`, `bottom`) |
 | `update_title_block` | `patch` |
 | `update_sheet` | `patch` (`size`, `orientation`, `scale`, `projection`), `sheet?` (then `name`, `size`, `orientation`, `scale` of that sheet) |
 | `add_sheet` / `remove_sheet` / `move_sheet` | `sheet?, index?` / `id` / `id, index` |
@@ -341,7 +341,7 @@ user's OK, so the drawing can be saved too.
     "plane": {"point": [40, 25], "direction": "horizontal"}, "name": "A"}},
   {"op": "add_sheet", "sheet": {"id": "s2", "name": "Exploded", "size": "A3"}},
   {"op": "add_view", "view": {"id": "ex", "orientation": "iso", "explode": 1.5, "sheet": "s2"}},
-  {"op": "auto_balloon", "view": "ex"},
+  {"op": "auto_balloon", "view": "ex", "side": "right", "spacing": 3},
   {"op": "add_annotation", "annotation": {"type": "bom_table", "sheet": "s2",
     "columns": ["item", "name", "quantity", "mass"], "density": 7.85}},
   {"op": "add_annotation", "annotation": {"type": "note", "sheet": "s2",

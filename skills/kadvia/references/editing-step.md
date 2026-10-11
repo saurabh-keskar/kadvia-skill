@@ -17,26 +17,28 @@ roll back each edit. The live reference is `kadvia:modeling_reference {"topic": 
 
 ## 1. Workflow
 - [ ] `kadvia:open_step_file {"path": "..."}` → an imported model (for example `m1`). `kadvia:render_views` to see it.
-- [ ] `kadvia:convert_to_part {"model_id": "m1"}` → a **new** part (for example `m2`) with one `import` feature that holds the file's solids. The STEP data is stored inside the part; the imported model stays open (close it if it gets in the way of renders, with the user's OK).
+- [ ] `kadvia:convert_to_part {"model_id": "m1"}` → a **new** part (for example `m2`) with one `import` feature that holds the file's solids. The STEP data is stored inside the part; the imported model stays open (leave it there: `kadvia:render_views` shows one model at a time, so it never gets in the way). Read the result's warnings: shells the kernel could not convert exactly are kept as **mesh-only bodies** (`exact: false`, listed in `meshOnlyBodies`) that can be viewed, measured and exported but not edited.
 - [ ] `kadvia:recognize_features {"model_id": "m2"}` → holes, bosses, fillets, chamfers (and optionally planar faces) with face ids and `near` points.
 - [ ] Plan the edit and tell the user what you'll change (which holes, which fillets).
 - [ ] `kadvia:apply_operations` on the part with direct edits and/or regular features, in small batches. Put new sizes in parameters (`set_parameter`) so they're easy to change.
 - [ ] Verify: feature status `ok`, `kadvia:recognize_features` again (hole sizes, fillet count), `kadvia:mass_properties` (volume moved the right way), `kadvia:render_views`.
 - [ ] With the user's OK: `kadvia:export_model` to `.step` (for other CAD tools or the shop) and/or `kadvia:save_part` to `.kadvia` (keeps the edits editable).
 
-If `kadvia:convert_to_part` fails, nothing is created: the file has no closed solid Kadvia can
-edit (see [Honest limits](#8-honest-limits)). Offer to rebuild the part from its measurements
-as a new parametric part instead.
+`kadvia:convert_to_part` never drops a body: a shell that can't become an exact solid stays as a
+mesh-only body with a warning naming it. Only when **no** shell can be converted or displayed does
+it fail with nothing created (see [Honest limits](#8-honest-limits)); offer to rebuild the part
+from its measurements as a new parametric part instead.
 
 ## 2. recognize_features
 `kadvia:recognize_features {"model_id": "m2", "include_planes"?: true, "body_id"?: "b0", "max_items"?: 60}`
 works on parts and imported models. Per body it returns:
 - `counts` and `holeSizes`, for example `{"Ø6 through": 4, "Ø4.2 blind": 2}`;
-- `holes[]`: diameter, depth, `through`, axis, centre, `faceIds`, `wallFaceIds`, `near`;
+- `holes[]`: diameter, depth, `through`, axis, centre, `faceIds`, `wallFaceIds`, `near`. A hole is **blind** when the faces its wall cuts off stay inside the cylinder (a flat floor, a drill-point cone, a stepped floor); the floor is included in `faceIds`. A through hole has both ends open. On parts, a wizard hole takes blind/through from its feature, so `recognize_features`, `kadvia:check_design` and the drawing callouts always agree;
 - `bosses[]`: diameter, height, face ids, `near`;
 - `fillets[]`: radius, `convex` (a round on an outside edge) or concave (a fillet in an inside corner), face ids, `near`;
-- `chamfers[]`: width, distance, face ids, `near`;
+- `chamfers[]`: width, `distance` (the leg on each neighbour), face ids, `near`. A chamfer is a narrow planar strip between two planar faces, tilted by the same angle (10–80°) against both, i.e. bisecting their corner. A strip at 90° to both neighbours (the end of a rib between two parallel faces) or a coplanar step is reported as a plane, not a chamfer, so chamfer distances are real ones;
 - with `include_planes: true`, the largest planar faces (normal, area, a point).
+- Mesh-only bodies are skipped with a note.
 
 Use face ids for an edit in the same session (`{"ids": [...]}`), and `near` points or
 geometric filters in features you'll keep: ids change after `delete_face` and on
@@ -145,11 +147,17 @@ from disk on every regeneration; after the file changed, `kadvia:rebuild_part {"
     "transform": {"translate": [0, 0, 20]}, "operation": "add"}}
 ]
 ```
-`transform` takes `rotate: {axis: {origin, direction}, angle}` and `translate` (rotate first);
-`bodies` picks some of the file's solids by index (default all).
+`transform` takes `rotate: {axis: {origin, direction}, angle}` and `translate` (rotate first).
+`bodies: [i, ...]` picks some of the file's shells by index from 0 (default all): index *i* is
+shell *i* in file order, counting every shell that yields a body (exact or mesh-only) and not the
+skipped ones, so body `b<i>` of an import without `bodies` is shell *i*, and `bodies: [i]` keeps
+exactly that one; the order of the list is the order of the created bodies (duplicates are
+ignored, an out-of-range index is an error naming the count). The mapping depends only on the
+file, so it is the same in every session and matches the body ids `kadvia:recognize_features`
+reports on the imported model and the part made by `kadvia:convert_to_part`.
 
 ## 8. Honest limits
-- **Not every STEP file converts.** Files whose shells lose entities in conversion, surface-only models (no closed solid) or faces the kernel can't handle stay view-only: `kadvia:convert_to_part` fails and nothing is created. They can still be opened, measured, rendered and exported. Offer to rebuild the part parametrically from its measurements.
+- **Not every shell becomes editable.** Shells that lose entities in conversion or have faces the kernel can't handle are kept as **mesh-only bodies** (`exact: false`, with a warning): displayed, measured and exported (mesh formats from the mesh, STEP as the shell that was read) like any body, but every feature targeting one fails with "body … is mesh-only"; a feature without `target` goes to the last exact body, and `kadvia:recognize_features` skips them with a note. Only a file with no convertible or displayable shell at all (an open surface model, lost entities) makes `kadvia:convert_to_part` fail with nothing created; it can still be opened, measured, rendered and exported. Offer to rebuild such geometry parametrically from its measurements.
 - **Edits keep the topology.** An edit that would make faces appear, disappear or meet differently (pushing a face past another, an offset larger than a fillet radius, moving a hole off its face) is refused with a `geometry` error; nothing changes.
 - **`delete_face` removes only whole features or blend strips:** holes, bosses, pockets, fillets and chamfers. Any other face is refused ("not a blend strip or a feature face"). Removing a fillet needs neighbours that are planes, cylinders or cones; fillets next to free-form or toroidal faces can't be removed by extension. Corners where three or more blends meet are removed only when the corner is one patch face bordered by removed strips.
 - **`move_face`** translates; rotating faces is not available yet.
@@ -157,3 +165,4 @@ from disk on every regeneration; after the file changed, `kadvia:rebuild_part {"
 - Direct edits and `import` features cannot be patterned or mirrored.
 - Face ids shift after `delete_face`: use `near` points or geometric filters in features you keep.
 - Feature recognition on a model whose exact geometry can't be read falls back to the mesh (`exact: false`: holes and planes only, approximate values).
+- `kadvia:measure` and `kadvia:check_design` on an imported model (kind `imported`) work on its tessellation (`exact: false`); convert it for exact values.

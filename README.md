@@ -30,17 +30,19 @@ AI assistant how to use it well:
 - run a **design check** for CNC, 3D printing (FDM/SLA), injection molding or sheet metal and
   fix the issues it finds;
 - verify everything with exact mass properties, measurements and screenshots from any angle
-  (custom directions, perspective, sections), and **point at faces** by highlighting them in
-  your Kadvia window;
+  (custom directions, perspective, sections) of **one model at a time**, or of chosen bodies
+  only (hide the lid to look inside), without touching your other open models, and **point at
+  faces** by highlighting them in your Kadvia window;
 - save `.kadvia` / `.kasm` / `.kdraw`, or export STEP, STL, 3MF, OBJ or a sketch as DXF.
 
-> Status: preview (v0.6). Parametric modeling (sketch, extrude, revolve, holes, fillets,
-> chamfers, patterns, mirror, loft, sweep, shell, draft), hole wizard and threads, sketch tools
-> and DXF import/export, materials, appearances and product renders, reference images,
-> imported-STEP editing, assemblies with sub-assemblies, motion mates, mate suggestions and
-> motion previews, 2D drawings of parts and assemblies with tolerances, GD&T, hole callouts, BOM
-> and balloons, design check, viewing (custom angles, perspective, sections), selection
-> highlighting, rebuild and inspection.
+> Status: preview (v0.7). Parametric modeling (sketch, extrude, revolve, holes, fillets and
+> chamfers including mixed convex/concave corners, patterns, mirror, loft, sweep, shell, draft),
+> hole wizard and threads, sketch tools and DXF import/export, materials, appearances and
+> product renders, reference images, imported-STEP editing (mesh-only bodies kept), assemblies
+> with sub-assemblies, motion mates, mate suggestions and motion previews, 2D drawings of parts
+> and assemblies with tolerances, GD&T, hole callouts, BOM and collision-free balloons, design
+> check with feature-aware hole sizes, viewing (per-model renders, isolated bodies, custom
+> angles, perspective, sections), selection highlighting, rebuild and inspection.
 
 The Kadvia MCP server already sends core instructions to every client, so this repository is
 optional — it makes results better (design rules, workflows, worked examples).
@@ -124,6 +126,7 @@ still get every number (bounding box, volume, mass).
 - "Make the bore an H7 fit, the thickness ±0.1, and add a position tolerance for the bolt holes to datums A and B."
 - "Dimension the hole positions as ordinates from the left edge."
 - "Make an assembly drawing with a parts list and balloons, and an exploded view on a second sheet."
+- "Put the balloons on the right of the exploded view, 4 mm apart."
 
 **Design check**
 - "Can this be machined on a 3-axis mill with a 6 mm cutter? Fix what can't."
@@ -145,4 +148,5 @@ still get every number (bounding box, volume, mass).
 - "I clicked a face in Kadvia. What is its area?"
 - "Which face is too thin? Highlight it for me."
 - "Show me the underside in perspective, and turn on a section through the bore."
+- "Render the housing without its lid so I can see the bosses — leave my other parts open."
 - "I re-exported the linked STEP file — rebuild the part."

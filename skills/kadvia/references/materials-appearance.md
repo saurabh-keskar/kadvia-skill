@@ -122,10 +122,11 @@ supersampled.
 | `background` | `"environment"` (default for renders, soft backdrop), `"white"`, `"gradient"`, `"transparent"` (PNG with alpha, for compositing) |
 | `views`, `width`, `height` | Standard views or custom directions `{"from": [x, y, z], "name"?}`, fitted; 64–2048 px |
 | `projection` | `"ortho"` or `"persp"` (a natural, slightly dramatic look for product shots) |
+| `model_id`, `isolate`, `hide`, `scene` | Which model (default the active one) and which of its bodies appear (`isolate: {"bodies": [...]}` shows only those, `hide: [...]` drops some); `scene: true` renders every open model. The images only: nothing changes for the user |
 
 - Use 1–2 views at 1200–2048 px for a product shot, and the standard quality for checking geometry (edges help).
 - For a hero angle other than `iso`, use a custom direction with perspective, for example `{"views": [{"from": [-1, -1.6, 0.7], "name": "hero"}], "quality": "render", "projection": "persp"}` (front left, slightly above).
-- Renders show every open model: close or mention the others first.
+- A render shows one model (`model_id`, default the active one), so the user's other open models never appear in the shot: don't close them. Use `isolate` / `hide` for a shot of some bodies only (the housing without its lid), and `scene: true` only when the user wants everything open in one picture.
 - Parts without a material or appearance render in a neutral grey; set at least a material for a convincing shot.
 - `environment` without `quality: "render"` is refused.
 
@@ -150,10 +151,10 @@ step for everything):
 **User:** "Make the bracket anodised blue aluminium and give me a nice product shot on a
 transparent background. How much does it weigh?"
 
-1. `kadvia:kadvia_status` → the part `m1` is open (close other models, with the user's OK, so they don't appear in the shot).
+1. `kadvia:kadvia_status` → the part `m1` is open (other open models don't matter: the render shows `m1` only).
 2. `kadvia:set_material {"model_id": "m1", "material": "aluminium_6061"}` → bodies report the material and mass, for example `mass_g: 66.9`.
 3. `kadvia:set_appearance {"model_id": "m1", "color": "#2a5db0", "finish": "satin", "metalness": 0.8, "name": "Anodised blue"}` (geometry and mass unchanged).
-4. `kadvia:render_views {"views": ["iso"], "quality": "render", "environment": "studio", "background": "transparent", "width": 1600, "height": 1200}` (it renders the open scene). Look at the image: is the colour right, are the faces lit, is anything clipped?
+4. `kadvia:render_views {"model_id": "m1", "views": ["iso"], "quality": "render", "environment": "studio", "background": "transparent", "width": 1600, "height": 1200}`. Look at the image: is the colour right, are the faces lit, is anything clipped?
 5. Optional second angle: `"views": ["front"]` or `"environment": "outdoor"`.
 6. Report: material Aluminium 6061-T6, mass from step 2 (or `kadvia:mass_properties`), the look you set (colour, finish), and that the PNG has a transparent background. Offer `kadvia:save_part` so the material and look are kept.
 

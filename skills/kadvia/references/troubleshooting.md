@@ -14,6 +14,7 @@
 | Warning "faces could not be tessellated" | Some faces will be missing from the display | Render and describe gaps; volume may be omitted |
 | Warning "entities could not be converted" | Some STEP data was skipped | Usually colours/annotations; geometry may still be complete |
 | Volume missing | Body is not a closed solid (surfaces or gaps) | Say so; do not invent a value |
+| Body volume differs from `kadvia:mass_properties` | It should not: both are the same kernel integral (a mesh-only body is the one exception, it has no exact volume) | Re-read `kadvia:get_model_info`; report the body as mesh-only if `exact: false` |
 
 ## Modeling errors (`kadvia:apply_operations`, `kadvia:set_parameters`)
 A failed batch changes **nothing**. The error names `operations[i]` and the feature id. Fix
@@ -25,6 +26,8 @@ that operation and resend the **whole corrected batch**.
 | `bad_request` "unknown parameter" / expression error | Parameter not defined yet (or defined later in the batch), a unit in the string (`"10mm"`), or an unsupported function | Define parameters first; use plain expressions (see `kadvia:modeling_reference` topic `expressions`) |
 | `bad_request` invalid op | Missing `feature` wrapper, wrong field name, wrong type | Compare with [modeling-operations.md](modeling-operations.md) |
 | `geometry` on a fillet/chamfer | Radius too big for the neighbouring faces, or the selector matched edges you did not intend | Smaller radius; narrow the selector (`plane`, `type`, `radius`); fillet before adding holes |
+| `geometry` on a fillet at a corner with a curved edge | Three or more selected edges meet and one is curved (or a face there is not flat) | Fillet the curved edges in a separate feature; mixed convex/concave corners between flat faces are fine in one feature |
+| `geometry` "share part of a curved face" | Two coaxial cylinders (or spheres) of one radius overlap only partly | Make one 0.01 mm larger, or let one contain the other |
 | `geometry` "selector matched no edges" | The selector describes edges that do not exist (yet) | Check bbox planes and radii in the last result; mind feature order |
 | `geometry` on a cut/hole | Plane on the wrong side (XZ offset goes to −Y; holes drill against the normal), or the cut misses the body | Put the plane on the entry face; use `"direction": "reverse"` |
 | `geometry` on an extrude/revolve | Open or self-intersecting profile; revolve profile crosses the axis | Check path points; keep the revolve profile on one side of the axis |
@@ -54,7 +57,8 @@ that operation and resend the **whole corrected batch**.
 | `mass_properties` has no mass, lists `unassigned` | Some bodies have no material | `kadvia:set_material` (part or body), or pass `density_g_cm3` |
 | Render looks plain grey | No material or appearance set | Set a material and/or appearance first |
 | `environment` refused | It only applies to beauty renders | Add `"quality": "render"` |
-| Other parts appear in the product shot | Renders show every open model | Close them (with the user's OK) or mention them |
+| Another part appears in the product shot | `scene: true` was passed, or the model you meant is not the active one | Drop `scene` and pass `model_id`; never close the user's models for a clean render |
+| The lid hides the inside in the shot | All bodies of the model are rendered | `"hide": ["<lid body id>"]` or `"isolate": {"bodies": [...]}` (ids from `kadvia:get_model_info`), for the images only |
 | Face colour disappeared after an edit | A face style used `ids`, which changed | Use `normal` / `plane` / `surface` selectors |
 
 ## Sketches and DXF
@@ -75,7 +79,12 @@ that operation and resend the **whole corrected batch**.
 ## Imported STEP edits
 | Error / symptom | Likely cause | Fix |
 |---|---|---|
-| `kadvia:convert_to_part` fails, nothing created | The file has no closed solid the kernel can edit (surface model, entities lost in conversion) | It stays view/measure/export only; offer to rebuild it as a parametric part from measurements |
+| `kadvia:convert_to_part` fails, nothing created | No shell of the file can be converted or displayed (open surface model, entities lost) | It stays view/measure/export only; offer to rebuild it as a parametric part from measurements |
+| `kadvia:convert_to_part` warns "could not be converted to exact solids", `meshOnlyBodies` | Some shells only display (`exact: false`); they were kept, not dropped | View, measure and export them as usual; edit only the exact bodies (tell the user which) |
+| `geometry` "body … is mesh-only" | A feature targets a mesh-only body | Target an exact body (`target`), or rebuild that body parametrically |
+| `kadvia:recognize_features` finds fewer chamfers than expected | Strips at 90° to both neighbours (rib ends) and coplanar steps are planes, not chamfers; only strips tilted 10–80° bisecting a corner count | Use `include_planes: true` or `near` points to select those faces |
+| `kadvia:check_design` hole `standard` reads "Ø5.5 (A or B)" | The diameter matches several table entries | Read `standardCandidates` and tell the user the options; for wizard holes the `feature` id gives the real kind |
+| `import` feature `bodies` index out of range | Indices count the file's shells that yield a body (exact or mesh-only), from 0, in file order | Use the count from the error; body `b<i>` = shell `i` |
 | `geometry` "not a blend strip or a feature face" | `delete_face` on a face that is neither a fillet/chamfer strip nor a whole hole/boss/pocket | Select the whole feature (all its faces), or use `offset_face`/`move_face` instead |
 | `geometry` "face N cannot be extended" | A fillet next to a free-form or toroidal face, or a neighbour that can't grow | That blend can't be removed by extension; tell the user |
 | `geometry` on `offset_face` / `move_face` | The edit would change which faces meet (pushed past another face, offset larger than a radius, feature moved off its face) | Use a smaller distance, or include the neighbouring faces in the selection |
@@ -103,7 +112,11 @@ that operation and resend the **whole corrected batch**.
 | Error / symptom | Likely cause | Fix |
 |---|---|---|
 | `bad_request` "give either view or from, not both" | `kadvia:set_view` got a standard view and a direction | Keep one |
-| `bad_request` "nothing to change" | `kadvia:set_view` got none of `view`, `from`, `projection`, `section` | Give at least one |
+| `bad_request` "nothing to change" | `kadvia:set_view` got none of `view`, `from`, `projection`, `section`, `model_id` | Give at least one |
+| `bad_request` `model_id` "needs fit" | `kadvia:set_view` got `model_id` with `fit: false` | Leave `fit` out (or true) when zooming to a model |
+| `bad_request` `scene` with `model_id` / `isolate` / `hide` | `scene: true` renders everything and takes no model or body filter | Drop `scene`, or drop the filters |
+| `not_found` on `kadvia:render_views` | Unknown `model_id`, or a body id in `isolate` / `hide` that the model doesn't have | `kadvia:list_models` for model ids, `kadvia:get_model_info` for body ids |
+| `bad_request` "nothing left to render" | `hide` removed every body, or `isolate` listed none that exist | Hide fewer bodies or fix the ids |
 | `bad_request` non-zero direction | A `from` of `[0, 0, 0]` (or non-numbers) | Use a real direction from the model toward the camera, e.g. `[0, 0, -1]` |
 | The section view keeps appearing in renders | A section turned on with `kadvia:set_view` stays on | `kadvia:set_view {"section": {"axis": "off"}}`, or pass `"section": {"axis": "off"}` to `kadvia:render_views` |
 | `bad_request` "a face needs its numeric id" | A `face`/`edge`/`vertex` item in `kadvia:set_selection` without `id` | Add the numeric id (only `body` items go without one) |
@@ -121,5 +134,7 @@ that operation and resend the **whole corrected batch**.
 | Batch refused on a `fit` tolerance | The fit or size is outside the ISO 286 tables (letters D–P / d–p, IT5–IT11, ≤ 500 mm) | Use a supported fit, or a `deviation` tolerance with the values |
 | Batch refused on a feature control frame | Datums on a form tolerance (flatness, …), or none on an orientation/runout tolerance; more than 3 datums | Remove or add `datums` to match the characteristic |
 | Balloon shows the wrong or no number | The ref isn't on the intended component, or the item isn't in the BOM | Use an edge id with that component's prefix (`bolt/b0:e4.mid`); `auto_balloon` to fill missing items |
+| `auto_balloon` refused on `spacing` or `side` | `spacing` outside 0–100 mm, or `side` not one of `around`, `left`, `right`, `top`, `bottom` | Fix the value (default spacing 2 mm) |
+| Balloons crowd one corner or overlap the BOM | Many items on one side of the view | `auto_balloon {"replace": true, "spacing": 4}` or `"side": "left"` / `"right"`; placement stays clear of views, tables and the title block |
 | DXF export wrote several files | The drawing has several sheets | Expected (`name-1.dxf`, …); pass `sheet` for one file |
 | An older Kadvia can't open the `.kdraw` | It uses newer drawing features (sheets, tolerances, GD&T, assembly sources) | Send PDF/DXF, or have the other person update Kadvia |

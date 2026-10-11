@@ -102,7 +102,7 @@ uniform thickness, bend radii and hole placement.
 | Hole entry (for screws and pins) | 0.3–1 mm chamfer |
 
 - The fillet radius must be smaller than the adjacent faces. On a plate of thickness t, a top-edge fillet must be less than t.
-- Box corners can be filleted all at once (`{"all": true}` on a block gives spherical corners). Where convex and concave edges meet (an L-bracket), fillet them in separate features.
+- Corners can be filleted all at once: `{"all": true}` on a block gives spherical corners, and on an L-bracket the corners where convex and concave edges meet get a smooth corner patch. Only corners that include a curved edge (a round rim meeting a straight edge) need the curved edges in a separate feature.
 - Prefer profile corner radii (`cornerRadius`) for vertical corners. They are more robust than filleting afterwards.
 
 ## 8. Densities

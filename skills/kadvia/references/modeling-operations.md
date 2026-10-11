@@ -196,7 +196,7 @@ Profiles are closed shapes. A profile completely inside another profile of the s
 ```
 - `box`: `center` or `corner` (minimum corner); the default is `corner [0, 0, 0]`.
 - `cylinder`: `base` is the centre of the start face (default origin); it grows along +`axis` (default `"Z"`).
-- `sphere`: `radius`, `center`. Spheres work with `add`/`cut`/`intersect` against boxes, cylinders and other spheres: pockets, domes (a sphere of the cylinder's radius on its top face), capsules, holes drilled through a ball, caps cut off. Avoid a sphere that touches another body in a single point, and two coincident spheres.
+- `sphere`: `radius`, `center`. Spheres work with `add`/`cut`/`intersect` against boxes, cylinders and other spheres: pockets, domes and capsule ends of the cylinder's own radius (tangent along the rim), holes drilled through a ball, caps cut off, and a sphere touching another body in a single point (`add` gives two bodies touching there; `cut` leaves the body unchanged). Bodies that share part of a curved face are decided by containment: identical bodies (`add`/`intersect` give the body; `cut` is an "empty result" error), one inside the other, and re-cutting an existing hole all work; two coaxial cylinders of the same radius that overlap only partly are refused ("share part of a curved face"): make one 0.01 mm larger.
 
 ### hole
 ```json
@@ -232,8 +232,9 @@ Profiles are closed shapes. A profile completely inside another profile of the s
 {"id": "top_chamfer", "type": "chamfer", "edges": {"plane": "max_z", "type": "line"}, "distance": 0.5}
 ```
 - Constant radius / equal distance.
-- **Corners work:** `{"all": true}` on a block or prism (three convex edges meet in a spherical corner patch; chamfers meet in a point), pocket corners where three concave edges meet, the edges around one face, tangent chains (rounded-rectangle outlines), rims of revolved parts, and concave edges such as boss bases and the inside of a bracket.
-- **Refused** (`geometry` error): corners where three or more selected **curved** edges meet; corners where selected convex and concave edges meet (for example `{"all": true}` on an L-bracket: fillet the convex and the concave edges in separate features); more than three selected edges at one vertex; sizes too large for the neighbouring faces.
+- **What blends:** any set of edges where at most two selected edges meet at a vertex, including tangent chains (rounded-rectangle outlines, rims of revolved parts), circular edges between a plane and a cylinder (convex rims, concave boss bases), edges ending at a concave corner, and the seams of booleans between curved faces (a boss on a cylinder, a cross hole).
+- **Corners work** between flat faces with straight edges: `{"all": true}` on a block or prism (three convex edges meet in a spherical corner patch; chamfers meet in a point), pocket corners (three concave edges), **and mixed corners**: convex and concave edges at one vertex (`{"all": true}` on an L-bracket), four or more edges at a vertex (a pyramid apex) or two blends meeting a sharp edge get a smooth corner patch tangent to the blends.
+- **Refused** (`geometry` error): corners where three or more selected edges meet and one of those edges is **curved** or one of the faces there is not flat (fillet the curved edges in a separate feature); sizes too large for the neighbouring faces ("the size is too large …").
 
 ### linear_pattern / circular_pattern / mirror
 ```json
@@ -323,7 +324,8 @@ select a union of the listed edges. Zero matches is an error.
 - Features with `operation` (extrude, revolve, primitives) create (`"new"`) or modify (`"add"`, `"cut"`, `"intersect"`) a body. The default `target` is the last body.
 - The first solid defaults to `"new"`; later ones default to `"add"`. Write `"operation": "cut"` explicitly for removals.
 - `"add"`/`"cut"`/`"intersect"` before any body exists is an error.
-- Body ids are `b0`, `b1`, ... Read them from the result or `kadvia:get_part`.
+- Bodies touching in a single point stay two bodies after `add`. Bodies sharing part of a curved face (the same cylinder, sphere, cone or torus) are decided by containment (see `sphere` above); the one unsupported case is a partial overlap along a shared curved face, such as two coaxial cylinders of one radius that overlap only partly: offset one of them by 0.01 mm.
+- Body ids are `b0`, `b1`, ... Read them from the result or `kadvia:get_part`. The `volume` of each body is the kernel's exact integral, identical to `kadvia:mass_properties`.
 - Prefer one body. Use extra `"new"` bodies only for multi-body designs the user asked for.
 
 ## 9. Gotchas
@@ -336,7 +338,7 @@ select a union of the listed edges. Zero matches is an error.
 - **Coplanar faces:** cuts that end exactly on a face, or bosses that only touch a wall, can make slivers or fail. Overlap by 0.5–1 mm, or make cuts go through.
 - **update_feature is shallow.** Patching `{"plane": {"offset": 5}}` drops `base`; send the whole object (`{"plane": {"base": "XY", "offset": 5}}`).
 - **Give ids.** Without them you can't reference a sketch from an extrude in the same batch.
-- **Fillet corners in separate features** when convex and concave edges meet (see the fillet notes above).
+- **Fillet curved edges separately** when they meet other selected edges at a corner (a round rim meeting a vertical edge). Mixed convex/concave corners between flat faces no longer need separate features (see the fillet notes above).
 
 ## 10. Face selectors
 Used by `shell.openFaces`, `draft.faces`, sketch/hole `plane: {"face": ...}`, assembly mates
@@ -397,14 +399,23 @@ edited with `edit_sketch`: see [sketch-tools.md](sketch-tools.md).
 - Read `kadvia:modeling_reference {"topic": "constraints"}` for the exact fields before editing one.
 
 ## 13. Known limits
-What the current version does not do (say so instead of improvising):
-- **Fillets/chamfers:** constant size only; refused at corners of three or more curved edges and at mixed convex/concave corners (split into separate features).
-- **Spheres:** no single-point (tangent) contact with another body; no two coincident spheres.
-- **Patterns/mirrors:** can't repeat patterns or mirrors; `shell`, `draft`, `import` and direct edits can't be patterned or mirrored.
-- **Shell:** thickness must be smaller than the smallest convex radius and less than half the thinnest section; open faces must not be tangent to a face that stays closed; faces with a pole (spheres, cone tips) can't be shelled yet.
-- **Draft:** planar faces only, not perpendicular to the pull direction.
-- **Loft:** one region per section. **Sweep:** tangent junctions (or line→line mitres); a helix profile must fit within one pitch and not reach the axis.
-- **Sheet metal:** no bend/flange/unfold features; model a uniform-thickness solid (see [design-rules.md](design-rules.md)).
-- **Threads:** cosmetic by default; modeled threads are slow and may fail where they cross other features. No pipe, tapered or multi-start threads (see [holes-threads.md](holes-threads.md#10-limits)).
-- **Sketch curves:** splines, ellipses and conics become fine arcs in solids and STEP (see [sketch-tools.md](sketch-tools.md#12-limits)).
-- **Imported STEP:** see [editing-step.md](editing-step.md#8-honest-limits); assemblies, drawings and the design check have their own limits in [assemblies.md](assemblies.md), [drawings.md](drawings.md) and [design-check.md](design-check.md).
+What works with restrictions, and what is refused (say so instead of improvising). This list
+matches the app's live `kadvia:modeling_reference`; when the two disagree, the live reference wins.
+
+| Area | Works (with restrictions) | Refused / not available |
+|---|---|---|
+| **Fillets / chamfers** | Constant radius or distance. Tangent chains, rims, boss bases, boolean seams between curved faces; corners between **flat** faces with straight edges: all-convex (spherical patch), all-concave (pocket), **mixed convex/concave** (an L-bracket with `{"all": true}`), four or more edges at a vertex (smooth corner patch) | Corners where three or more selected edges meet and one of them is curved, or a face there is curved (fillet the curved edges in a separate feature); sizes too large for the neighbouring faces. No variable radius |
+| **Spheres and booleans** | `add`/`cut`/`intersect` with boxes, cylinders, spheres; domes and capsules tangent along a rim; single-point contact (`add` gives two touching bodies, `cut` changes nothing); identical bodies (`add`/`intersect` return the body); one body inside another; re-cutting an existing hole | Partial overlap along a shared curved face (two coaxial same-radius cylinders overlapping partly): "share part of a curved face"; `cut` of identical bodies: "empty result" |
+| **Patterns / mirrors** | `extrude`, `hole`, primitives, `loft`, `sweep` | Patterns of patterns or mirrors; `shell`, `draft`, `import` and the direct edits |
+| **Shell** | Open faces may be adjacent or have holes; planar faces exact, curved faces offset by a B-spline approximation (tolerance in the feature message) | Thickness ≥ the smallest convex radius or ≥ half the thinnest section; open faces tangent to a face that stays closed; faces with a pole (spheres, cone tips) |
+| **Draft** | Planar faces hinged on the neutral plane; `draftAngle` on extrudes (every direction; walls shrink or grow) | Faces perpendicular to `pull`; a face or edge that would collapse ("draft too large"); `draftAngle` with `through` |
+| **Loft** | 2+ sections on any planes; holes if every section has the same number | Intersecting sections; several regions in one section |
+| **Sweep** | Lines and arcs with tangent junctions, line→line mitres, closed tangent loops, helices | Non-tangent arc junctions; a helix profile wider than one pitch or reaching the axis |
+| **Sheet metal** | A uniform-thickness solid checked by `kadvia:check_design` (see [design-rules.md](design-rules.md)) | Bend, flange or unfold features |
+| **Threads** | Cosmetic by default; modeled 60° threads (slow) | Pipe (NPT/BSP), tapered and multi-start threads; modeled threads crossing other features may fail (see [holes-threads.md](holes-threads.md#10-limits)) |
+| **Sketch curves** | Splines, ellipses, conics and text, as fine arcs in solids and STEP | Exact free-form surfaces (see [sketch-tools.md](sketch-tools.md#12-limits)) |
+| **Imported STEP** | Exact shells become editable; shells that only display are kept as mesh-only bodies | Editing mesh-only bodies (see [editing-step.md](editing-step.md#8-honest-limits)) |
+
+Assemblies, drawings and the design check have their own lists in
+[assemblies.md](assemblies.md#13-limits), [drawings.md](drawings.md#16-limits) and
+[design-check.md](design-check.md#7-limits).

@@ -19,7 +19,7 @@ What it can do:
 - **Assemblies** (`.kasm`): place parts and rigid sub-assemblies, mate them (including gear, rack and pinion, cam and limit mates), check DOF, get mate suggestions, preview how a mechanism moves, BOM (top-level, indented, flat) and interference.
 - **2D drawings** (`.kdraw`) of parts, assemblies and STEP models: auto-dimensioned views, detail, section and exploded views, ordinate/baseline/chain dimensions, tolerances and ISO fits, GD&T and surface finish, BOM tables and balloons, multiple sheets, title block, PDF/DXF/SVG.
 - **Design check:** manufacturability for CNC, FDM/SLA printing, injection molding and sheet metal.
-- **Inspect and present models:** open files, measure exactly, take screenshots from standard or custom angles (perspective, sections), read the user's selection (faces, edges, vertices, bodies) and highlight things for the user.
+- **Inspect and present models:** open files, measure exactly, take screenshots of one model (or chosen bodies of it) from standard or custom angles (perspective, sections), read the user's selection (faces, edges, vertices, bodies) and highlight things for the user.
 - **Save and export:** `.kadvia`, `.kasm`, `.kdraw`; STEP, STL, 3MF or OBJ; a sketch as DXF.
 
 ## Conventions
@@ -47,7 +47,7 @@ Details: [references/views-and-conventions.md](../skills/kadvia/references/views
 | `rebuild_part` | Regenerate a part without changing it (`force: true` re-reads linked files), reload an assembly's component files, or re-project a drawing |
 | `mass_properties` / `measure` | Exact volume, area, centre of mass, mass (from the assigned materials); exact lengths, radii, distances and angles of faces/edges |
 | `list_materials` / `set_material` / `set_appearance` | Material library; assign a material (part, body, assembly component); colour and finish (part, body, faces; display only) |
-| `render_views` | See the model: 1–8 views as images, standard (`"iso"`, `"top"`, …) or custom directions `{"from": [x, y, z], "name"?}`; `projection` `ortho`/`persp`, optional section, reference images; `quality: "render"` for product shots |
+| `render_views` | See **one model** (`model_id`, default the active one; the user's other open models stay out of the images): 1–8 views, standard (`"iso"`, `"top"`, …) or custom directions `{"from": [x, y, z], "name"?}`; `isolate: {"bodies": [...]}` / `hide: [...]` pick bodies for these images only; `scene: true` for everything open; `projection` `ortho`/`persp`, optional section, reference images; `quality: "render"` for product shots |
 | `check_design` | Manufacturability check for a process, with locations and fixes |
 | `open_step_file` | Open `.step`/`.stp` (imported), `.kadvia` (part), `.kasm` (assembly) or `.kdraw` (drawing) |
 | `convert_to_part` / `recognize_features` | Make an imported STEP editable; list holes (with wizard size and thread), bosses, fillets and chamfers |
@@ -57,9 +57,9 @@ Details: [references/views-and-conventions.md](../skills/kadvia/references/views
 | `new_drawing` / `get_drawing` / `apply_drawing_operations` / `export_drawing` | 2D drawings of parts, assemblies or STEP models: create, read edge ids, edit (sheets, dimensions, tolerances, GD&T, BOM, balloons), write PDF/DXF/SVG |
 | `save_part` / `export_model` | Write `.kadvia`/`.kasm`/`.kdraw` / STEP, STL, 3MF or OBJ, or one sketch as DXF (`sketch`) (only when the user asks or agrees) |
 | `list_models` / `get_model_info` | Bodies, faces, edges, bbox, volume, warnings of any model |
-| `set_view` / `fit_view` / `set_display_mode` | Present things in the user's viewport: standard `view` or a direction `from`, `projection`, section view on/off; zoom to fit; display mode |
+| `set_view` / `fit_view` / `set_display_mode` | Present things in the user's viewport: standard `view` or a direction `from`, `projection`, section view on/off, `model_id` to fit one model; zoom to fit; display mode |
 | `get_selection` / `set_selection` | What the user clicked (faces, edges, vertices with their `point`, bodies) / highlight faces, edges, vertices or bodies for the user (replaces their selection; `[]` clears) |
-| `close_model` | Remove a model from the window (confirm first; save before closing) |
+| `close_model` | Remove a model from the window (confirm first; save before closing). **Never** close the user's models to get a clean render: use `render_views` `model_id` / `isolate` instead |
 
 ## Modeling checklist (copy it and tick it off)
 - [ ] `kadvia_status`: is the app running and the window ready?
@@ -103,7 +103,7 @@ the rollback bar and known limits): [references/modeling-operations.md](../skill
 6. **Holes use standard sizes through the hole wizard:** `"kind": "tapped" | "clearance" | "counterbore" | "countersink"` with `"size": "M6"` (or `"1/4-20 UNC"`) instead of typed diameters. The tables give clearance Ø (normal fit: M3 3.4, M4 4.5, M5 5.5, M6 6.6, M8 9, M10 11), tap drills (M3 2.5, M4 3.3, M5 4.2, M6 5.0, M8 6.8), socket-head counterbores and threads, and drawings get proper callouts. Plain `diameter` holes are for non-fastener holes. Keep hole centres at least 1.5×d from edges. See [references/holes-threads.md](../skills/kadvia/references/holes-threads.md) and [references/design-rules.md](../skills/kadvia/references/design-rules.md).
 7. **Fillets and chamfers:**
    - Inside corners of an L-shape get radius `r` and the matching outside corner gets `r + thickness`, so the wall stays uniform.
-   - Box corners can be rounded in one feature (`{"all": true}` gives spherical corners). Where convex and concave edges meet (an L-bracket), use separate features.
+   - Corners can be rounded in one feature: `{"all": true}` on a block gives spherical corners, and it also works on an L-bracket (where convex and concave edges meet, the corner gets a smooth patch). Only corners where three or more selected edges meet and one of them is **curved** are refused: fillet the curved edges in a separate feature.
    - For CNC, inside vertical corners need at least the tool radius (≥ 1 mm, 3 mm is typical).
    - For 3D printing, chamfer bottom edges (no overhang) and fillet top edges.
    - Apply small cosmetic edge breaks (0.5–1 mm) last.
@@ -141,7 +141,7 @@ Details, the calibration formulas and a worked tracing example: [references/imag
 1. Write wizard holes: `{"type": "hole", "plane": {"face": {"normal": "+Z", "plane": "max_z"}}, "points": [...], "kind": "tapped", "size": "M5", "threadDepth": 10}`. Kinds: `tapped`, `clearance` (`fit`: `close`, `normal`, `loose`), `counterbore`, `countersink`, `counterdrill`, `simple`. Sizes: `"M3"` … `"M64"`, `"M8x1"`, `"1/4-20 UNC"`, `"#10-32 UNF"`.
 2. Depth: `depth` (blind; a 118° drill point is added, `drillPoint: 0` for flat), `through: true`, or `endCondition: "up_to_face"` with `upTo`. "M5 × 10 deep" usually means 10 mm of full thread: give `threadDepth: 10` and the drill depth follows (thread + 3 pitches).
 3. Threads: tapped holes get a **cosmetic** thread by default (`thread: "modeled"` cuts real geometry, slow: for 3D printing). Shafts and existing holes get a `thread` feature on their cylindrical face.
-4. Resize with `update_feature {"id": "m5_holes", "patch": {"size": "M6"}}`. `recognize_features` reports wizard holes by size and kind with their thread; drawings get standard hole callouts (`4X Ø6.6 THRU` / `⌴Ø11 ↧6.5`).
+4. Resize with `update_feature {"id": "m5_holes", "patch": {"size": "M6"}}`. `recognize_features` reports wizard holes by size and kind with their thread; `check_design` `holes` name the wizard feature (`feature`) and take blind/through and the standard size from it, consistent with the drawing callouts (`4X Ø6.6 THRU` / `⌴Ø11 ↧6.5`).
 
 Worked examples (four M5 tapped holes 10 deep, counterbored holes for M6 socket head screws), tables and limits: [references/holes-threads.md](../skills/kadvia/references/holes-threads.md).
 
@@ -169,8 +169,8 @@ Worked examples (engrave text 0.5 mm deep, import a DXF outline and extrude it 3
 8. **A file changed outside Kadvia** (a STEP file inserted with `"link": true` was re-exported, a component part was saved by someone else): `rebuild_part {"model_id": "m1", "force": true}` re-runs every feature and re-reads linked files (no undo step); on an assembly it reloads the component files and re-solves. Check the `changes` and feature status, then render. STEP data stored in the part (the default, and `convert_to_part`) does not follow the file.
 
 ## Editing imported STEP files
-1. `open_step_file` → kind `imported`. `convert_to_part` → a **new** part whose first feature holds the solids (the STEP data is stored in it). If conversion fails, nothing is created: the file stays view-only; offer a parametric rebuild.
-2. `recognize_features` on the part → holes (`holeSizes` such as `{"Ø6 through": 4}`), bosses, fillets, chamfers, with face ids and `near` points.
+1. `open_step_file` → kind `imported`. `convert_to_part` → a **new** part whose first feature holds the solids (the STEP data is stored in it); the imported model stays open (leave it: renders show one model at a time). A shell that can't be converted exactly is kept as a **mesh-only body** (`exact: false`, listed in `meshOnlyBodies` with a warning): it can be viewed, measured and exported but not edited. Conversion fails (nothing created) only when no shell can be converted or displayed; offer a parametric rebuild then.
+2. `recognize_features` on the part → holes (`holeSizes` such as `{"Ø6 through": 4}`; blind when a floor or drill point closes the wall), bosses, fillets, chamfers (planar strips bisecting a corner between two planar faces, tilted 10–80° against both; rib ends between parallel faces are planes, not chamfers), with face ids and `near` points. The same body ids (`b0`, `b1`, …) appear on the imported model, the part and as `bodies` indices of the `import` feature.
 3. `apply_operations` with direct-edit features: `resize_hole {faces, diameter}`, `delete_face {faces}` (removes fillets, chamfers, holes, bosses and heals), `offset_face {faces, distance}`, `move_face {faces, distance, direction?}`, or any regular feature on the imported faces (holes, sketches on `{"face": ...}` planes, cuts, fillets).
 4. Select faces with geometric filters you can keep (`{"surface": "cylinder", "concave": true, "diameter": 6}`) or `near` points; ids change after edits.
 5. Verify (`recognize_features` again, `mass_properties`, renders), then `export_model` to STEP with the user's OK.
@@ -208,7 +208,7 @@ Worked examples (bracket bolted to a plate, gear pair), sub-assemblies and limit
 3. `apply_drawing_operations`:
    - `add_dimension` (`horizontal`, `vertical`, `linear`, `diameter`, `radius`, `angle`, `ordinate`; values are measured, never typed) with an optional `tolerance` (`symmetric`, `deviation`, `limits`, `fit` such as `"H7"` or `"H7/g6"`, `basic`, `reference`); `add_dimension_set` (`ordinate`, `baseline`, `chain`).
    - `add_view` (`standard`, `detail`, `section`; `explode` for assemblies; `sheet`).
-   - `add_annotation`: `note`, `hole_callout`, `datum`, `feature_control_frame` (flatness, perpendicularity, position, … with datums), `surface_finish`, `balloon`, `bom_table`; `auto_balloon`.
+   - `add_annotation`: `note`, `hole_callout`, `datum`, `feature_control_frame` (flatness, perpendicularity, position, … with datums), `surface_finish`, `balloon`, `bom_table`; `auto_balloon {"view"?, "replace"?, "spacing"?: mm (default 2), "side"?: "around" | "left" | "right" | "top" | "bottom"}` places one balloon per BOM item clear of each other, the views, dimension texts, the BOM table and the title block.
    - `add_sheet` / `remove_sheet` / `move_sheet`, `update_title_block`, `update_sheet`.
 4. `export_drawing` (`.pdf`: every sheet as a page; `.dxf`/`.svg`: one file per sheet, or `sheet`) and `save_part` (`.kdraw`, after saving the source), with the user's OK. The drawing follows later changes of its source.
    - Wizard holes get standard hole callouts automatically and cosmetic threads are drawn as thread lines; BOM tables can show `mass` and `material` from the assigned materials.
@@ -220,13 +220,14 @@ Worked examples (L-bracket, toleranced flange with GD&T, assembly drawing with B
 1. `list_materials` (`query`: "aluminium", "delrin"; `category`: `metal`, `plastic`, `other`) when unsure of the id. Library ids such as `aluminium_6061`, `stainless_304`, `steel_1018`, `abs`, `pla`, `petg`, `nylon_pa12`, `pom`; names and aliases work too; a custom `{"name": ..., "density": g/cm³}` for anything else.
 2. `set_material {"model_id", "material", "body_id"?, "component_id"?}`: mass, BOM masses and drawing BOM tables then come from the material (no density argument needed).
 3. `set_appearance {"model_id", "color": "#2a5db0", "finish": "satin", ...}` for the part, one body (`body_id`) or faces (`body_id` + `faces` selector). Finishes: `polished`, `brushed`, `satin`, `matte`, `glossy`, `textured`; also `metalness`, `roughness`, `clearcoat`, `opacity`. Display only: geometry and mass never change. Keep the real material for anodised or painted metal and change only the look.
-4. Product shot: `render_views {"views": ["iso"], "quality": "render", "environment": "studio" | "outdoor" | "warehouse", "background": "transparent", "width": 1600, "height": 1200}`. Renders show every open model; use the standard quality for checking geometry.
+4. Product shot: `render_views {"model_id": "m1", "views": ["iso"], "quality": "render", "environment": "studio" | "outdoor" | "warehouse", "background": "transparent", "width": 1600, "height": 1200}`. A render shows one model (`model_id`, default the active one), so the user's other open models never spoil the shot: don't close them. `isolate: {"bodies": ["b0"]}` or `hide: ["b2"]` show or drop bodies in the images only; `scene: true` renders everything open. Use the standard quality for checking geometry.
 
 Worked example (anodised blue aluminium product render), finishes, precedence and limits: [references/materials-appearance.md](../skills/kadvia/references/materials-appearance.md).
 
 ## Design check
 - Run `check_design {"model_id": ..., "process": ...}` when a design is done or the user asks whether it can be made. Processes: `cnc`, `print_fdm`, `print_sla`, `injection`, `sheet_metal`, `general`. Ask which one if unclear; pass `build_direction` and `params` (for example `{"toolRadius": 1.5}`) when known.
 - Explain errors, then warnings, with `value` vs `limit` and where. Infos are advice.
+- `holes[]` lists every detected hole with `through`, `standard` and, for wizard holes, the `feature` id (blind/through and the size then come from the feature, as in `recognize_features` and the drawing callouts). A diameter that fits several table entries is reported as ambiguous, for example `"Ø5.5 (M5 clearance (medium) or M2.5 counterbore)"` with `standardCandidates`: tell the user the options instead of picking one.
 - Propose a fix in the feature or parameter that made the face (`location.point` works in `near` selectors), **ask before changing the design**, then run the check again.
 
 Rules, limits and a worked fix loop: [references/design-check.md](../skills/kadvia/references/design-check.md).
@@ -244,12 +245,13 @@ Rules, limits and a worked fix loop: [references/design-check.md](../skills/kadv
 | Direct edit (imported) | `recognize_features`: new hole sizes / fillets gone; volume moved the right way | the edited faces |
 | Before export | `mass_properties`: one closed body (unless intended), volume > 0, mass if the material is known; `check_design` for the process | all four default views |
 
-Always compute a rough hand estimate first. A result 2× off means a wrong plane, a wrong direction or a missed cut.
+Always compute a rough hand estimate first. A result 2× off means a wrong plane, a wrong direction or a missed cut. The `volume` in body summaries (`get_model_info`, `get_part`, `apply_operations` results, BOMs) is the same kernel integral as `mass_properties`, so the two agree to the last digit.
 
 ## Pointing, viewing and custom angles
 - **Show the user which face you mean:** take the id from `get_selection`, `recognize_features` (face ids) or `get_model_info` (body ids), then `set_selection {"items": [{"model_id": "m1", "kind": "face", "body_id": "b0", "id": 12}]}` and refer to "the highlighted face". `kind` is `body`, `face`, `edge` or `vertex` (`id` for all but bodies; assembly bodies are `"<componentId>/<bodyId>"`). It replaces the user's selection, so read `get_selection` first if you still need theirs; `{"items": []}` clears it. Unknown ids are skipped: check how many were selected.
 - **Look from any angle:** `render_views {"views": ["iso", {"from": [0, 0, -1], "name": "under"}], "projection": "persp"}`. `from` points from the model toward the camera (a face normal looks straight at that face). Keep `ortho` (the usual default) for judging proportions; `persp` looks natural.
-- **Turn the user's camera:** `set_view` with `view` (standard) or `from` (a direction, not both), `projection` (`ortho`/`persp`, kept until changed) and `section` (`{"axis": "y", "offset": 20}` stays on, also in `render_views`, until `{"axis": "off"}`).
+- **Render one model, or part of it:** `render_views` shows one model (`model_id`, default the active one); the user's other open models stay out of the images, so **never close them for a clean render**. `{"model_id": "m1", "isolate": {"bodies": ["b0"]}}` shows only those bodies, `"hide": ["b2"]` leaves bodies out (a cover, to look inside); both apply to these images only and leave the user's visibility and selection alone (body ids from `get_model_info`). `"scene": true` renders everything open (not with `model_id`, `isolate` or `hide`). Views are fitted to the bodies shown.
+- **Turn the user's camera:** `set_view` with `view` (standard) or `from` (a direction, not both), `projection` (`ortho`/`persp`, kept until changed), `section` (`{"axis": "y", "offset": 20}` stays on, also in `render_views`, until `{"axis": "off"}`) and `model_id` to zoom to that model instead of everything.
 - **Rebuild after files changed outside Kadvia:** `rebuild_part` (`force: true` for parts) instead of closing and reopening; imported STEP models have nothing to rebuild (reopen the file).
 
 Views, directions and section details: [references/views-and-conventions.md](../skills/kadvia/references/views-and-conventions.md#custom-directions-projection-and-sections).
@@ -267,7 +269,7 @@ More: [references/troubleshooting.md](../skills/kadvia/references/troubleshootin
 ## Inspecting existing models (STEP)
 - Overall size comes from the bbox `size` in `get_model_info` (X × Y × Z mm).
 - Exact distances, radii and angles: `measure` (omit `a`/`b` to measure the user's selection). Imported models are measured on their mesh (`exact: false`).
-- Volume is reported per body and in `totals`. It is missing when a body is not a closed solid; say so.
+- Volume is reported per body and in `totals`, and equals `mass_properties` exactly. It is missing when a body is not a closed solid; say so.
 - Mass comes from the assigned material (`set_material`, then `mass_properties`), or from `density_g_cm3` for a quick what-if (steel 7.85 g/cm³, aluminium 6061 2.70), or by hand: volume × density.
 - Selection areas and lengths from `get_selection` come from the display mesh, so say "about" for curved faces, or use `measure`. A selected vertex (`kind: "vertex"`) comes with its `point`; measure it as `{"kind": "point", "point": [x, y, z]}`.
 - Look before you answer: call `render_views` whenever the answer depends on the shape.
